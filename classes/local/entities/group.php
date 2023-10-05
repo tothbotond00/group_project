@@ -23,9 +23,14 @@
  */
 
 namespace mod_groupproject\local\entities;
-class group {
-    /** @var int $id ID */
-    private $id;
+use core_group\reportbuilder\datasource\groups;
+use mod_groupproject\local\factories\entity_factory;
+
+class group extends entity {
+
+    /** @var string $TABLE DB table of class */
+    public static $TABLE = 'groupproject_groups';
+
     /** @var string $name Name of the group  */
     private $name;
     /** @var ?string $idnumber Idnumber of group */
@@ -36,6 +41,8 @@ class group {
     private $timecreated;
     /** @var int $timemodified Group creation unix timestamp */
     private $timemodified;
+    /** @var array $users The users in the current group */
+    private $users = array();
 
     /**
      * @param int $id
@@ -45,7 +52,14 @@ class group {
      * @param int $timecreated
      * @param int $timemodified
      */
-    public function __construct(int $id, string $name, ?string $idnumber, int $size, int $timecreated, int $timemodified)
+    public function __construct(
+        int $id,
+        string $name,
+        ?string $idnumber,
+        int $size,
+        int $timecreated,
+        int $timemodified
+    )
     {
         $this->id = $id;
         $this->name = $name;
@@ -53,22 +67,6 @@ class group {
         $this->size = $size;
         $this->timecreated = $timecreated;
         $this->timemodified = $timemodified;
-    }
-
-    /**
-     * @return int
-     */
-    public function getId(): int
-    {
-        return $this->id;
-    }
-
-    /**
-     * @return string
-     */
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**
@@ -101,6 +99,21 @@ class group {
     public function getTimemodified(): int
     {
         return $this->timemodified;
+    }
+
+    public function delete()
+    {
+        global $DB;
+
+        $DB->delete_records('groupproject_user_assign', ['groupid' => $this->id]);
+        $DB->delete_records('groupproject_comments', ['groupid' => $this->id]);
+        $files = $DB->get_records('groupproject_files', ['groupid' => $this->id]);
+        foreach ($files as $file){
+            $file = entity_factory::create_file_from_stdclass($file);
+            $file->delete();
+        }
+
+        parent::delete();
     }
 
 }
