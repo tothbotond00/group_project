@@ -12,23 +12,23 @@ class groupproject extends entity {
     public static $TABLE = 'groupproject';
 
     /** @var int $course ID of the course  */
-    private $course;
+    protected $course;
     /** @var string $name Name of groupproject */
-    private $name;
+    protected $name;
     /** @var string $intro Intro of the groupproject */
-    private $intro;
+    protected $intro;
     /** @var int $intro Intro of the groupproject */
-    private $introformat;
+    protected $introformat;
     /** @var int $duedate Duedate for the groupproject */
-    private $duedate;
+    protected $duedate;
     /** @var int $grade Maxgrade for the groupproject */
-    private $grade;
+    protected $grade;
     /** @var int $timecreated Group creation unix timestamp */
-    private $timecreated;
+    protected $timecreated;
     /** @var int $timemodified Group creation unix timestamp */
-    private $timemodified;
+    protected $timemodified;
     /** @var array $groups The Groups associated with the project */
-    private $groups = array();
+    protected $groups = array();
 
     /**
      * @param int $id

@@ -2,7 +2,7 @@
 
 namespace mod_groupproject\local\entities;
 
-abstract class entity {
+abstract class entity  {
 
     /** @var string $TABLE DB table of class */
     public static $TABLE = '';
@@ -30,7 +30,8 @@ abstract class entity {
         global $DB;
 
         if($DB->record_exists(static::$TABLE, array('id' => $this->id))){
-            return $DB->update_record(static::$TABLE, (object)(array) $this);
+            $obj = json_decode($this->toJson($this), true);
+            return $DB->update_record(static::$TABLE, (object)(array) $obj);
         }
         return false;
     }
@@ -41,10 +42,29 @@ abstract class entity {
         $DB->delete_records(static::$TABLE, array('id' => $this->id));
     }
 
-    public static function attribute_exist($attribute, $value, $parentcolumn, $parentid): bool{
+    public static function attribute_exist($attribute, $value, $parentcolumn = '', $parentid = 0): bool{
         global $DB;
-
-        $records = $DB->get_records(static::$TABLE, array($attribute => $value, $parentcolumn => $parentid));
+        if($parentid === 0){
+            $records = $DB->get_records(static::$TABLE, array($attribute => $value));
+        }else {
+            $records = $DB->get_records(static::$TABLE, array($attribute => $value, $parentcolumn => $parentid));
+        }
         return count($records) !== 0;
+    }
+
+    protected function toJson()
+    {
+        $properties = $this->getProperties();
+        $object     = new \stdClass();
+        $object->_class      = get_class($this);
+        foreach ($properties as $name => $value) {
+            $object->$name = $value;
+        }
+        return json_encode($object);
+    }
+
+    protected function getProperties()
+    {
+        return get_object_vars($this);
     }
 }

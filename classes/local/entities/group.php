@@ -34,19 +34,19 @@ class group extends entity {
 
 
     /** @var int $groupprojectid Id of the groupproject instance */
-    private $groupprojectid;
+    protected $groupprojectid;
     /** @var string $name Name of the group  */
-    private $name;
+    protected $name;
     /** @var ?string $idnumber Idnumber of group */
-    private $idnumber;
+    protected $idnumber;
     /** @var int $size Size of the group */
-    private $size;
+    protected $size;
     /** @var int $timecreated Group creation unix timestamp */
-    private $timecreated;
+    protected $timecreated;
     /** @var int $timemodified Group creation unix timestamp */
-    private $timemodified;
+    protected $timemodified;
     /** @var array $users The users in the current group */
-    private $users = array();
+    protected $users = array();
 
     /**
      * @param int $id
@@ -67,6 +67,7 @@ class group extends entity {
     )
     {
         $this->id = $id;
+        $this->groupprojectid = $groupprojectid;
         $this->name = $name;
         $this->idnumber = $idnumber;
         $this->size = $size;
@@ -82,6 +83,15 @@ class group extends entity {
     public function setGroupprojectid(int $groupprojectid): void
     {
         $this->groupprojectid = $groupprojectid;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function setName($name){
+        $this->name = $name;
     }
 
     /**
@@ -114,6 +124,38 @@ class group extends entity {
     public function getTimemodified(): int
     {
         return $this->timemodified;
+    }
+
+    /**
+     * @param string|null $idnumber
+     */
+    public function setIdnumber(?string $idnumber): void
+    {
+        $this->idnumber = $idnumber;
+    }
+
+    /**
+     * @param int $size
+     */
+    public function setSize(int $size): void
+    {
+        $this->size = $size;
+    }
+
+    /**
+     * @param int $timecreated
+     */
+    public function setTimecreated(int $timecreated): void
+    {
+        $this->timecreated = $timecreated;
+    }
+
+    /**
+     * @param int $timemodified
+     */
+    public function setTimemodified(int $timemodified): void
+    {
+        $this->timemodified = $timemodified;
     }
 
     public function delete()

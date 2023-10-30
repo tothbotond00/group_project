@@ -2,15 +2,7 @@
 
 namespace mod_groupproject\output;
 
-use mod_groupproject\local\factories\entity_factory;
-use mod_groupproject\local\loaders\entity_loader;
-
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->libdir.'/tablelib.php');
-
-class group_table extends \table_sql
-{
+class role_table extends \table_sql {
     public function __construct($uniqueid, $url) {
         global $CFG;
         parent::__construct($uniqueid);
@@ -26,9 +18,8 @@ class group_table extends \table_sql
     private function define_table_columns()
     {
         $cols = array(
-            'name' => get_string('groupname', 'mod_groupproject'),
-            'groupsize' => get_string('groupsize', 'mod_groupproject'),
-            'fileupload' => get_string('fileupload', 'mod_groupproject'),
+            'name' => get_string('rolename', 'mod_groupproject'),
+            'description' => get_string('roledescription', 'mod_groupproject'),
             'actions' => get_string('actions', 'mod_groupproject'),
         );
 
@@ -39,7 +30,7 @@ class group_table extends \table_sql
     private function define_table_configs()
     {
         $this->collapsible(false);
-        $this->sortable(true, 'groupname', SORT_ASC);
+        $this->sortable(true, 'rolename', SORT_ASC);
         $this->pageable(true);
         $this->no_sorting('actions');
     }
@@ -77,7 +68,7 @@ class group_table extends \table_sql
         }
 
         $sql = "SELECT $select
-                  FROM {groupproject_groups} g";
+                  FROM {groupproject_roles} r";
 
         // Check if any additional filtering is required.
         [$sqlwhere, $params] = $this->get_sql_where();
@@ -92,35 +83,18 @@ class group_table extends \table_sql
         return array($sql, $params);
     }
 
-    public function  col_groupsize($group){
-        $group_obj = entity_factory::create_group_from_stdclass($group);
-        return   count($group_obj->getUsers()) . ' / ' . $group->size ;
+    public function col_description($role){
+        return json_decode($role->description)->text;
     }
 
-    public function  col_fileupload($group){
-        return 'nothing';
-    }
-
-    public function col_actions($group){
+    public function col_actions($role){
         global $OUTPUT;
 
         $links = '';
 
-        $groupproject = entity_loader::groupproject_loader($group->groupprojectid);
-        $context = $groupproject->getContext();
-
-        //Add Users
-        $addusers = ['id' => $context->instanceid, 'groupid' => $group->id];
-        $usersurl = new \moodle_url('/mod/groupproject/group.php', $addusers);
-
-        $links .= $OUTPUT->action_icon(
-            $usersurl,
-            new \pix_icon('t/move', get_string('add_users', 'mod_groupproject'))
-        );
-
         // Modify
-        $modifyparams = ['id' => $context->instanceid, 'groupid' => $group->id, 'action' => 'modify'];
-        $modifyurl = new \moodle_url('/mod/groupproject/group.php', $modifyparams);
+        $modifyparams = ['roleid' => $role->id, 'action' => 'modify'];
+        $modifyurl = new \moodle_url('/mod/groupproject/role.php', $modifyparams);
 
         $links .= $OUTPUT->action_icon(
             $modifyurl,
@@ -128,8 +102,8 @@ class group_table extends \table_sql
         );
 
         // Delete.
-        $deleteparams = ['id' => $context->instanceid, 'groupid' => $group->id, 'action' => 'delete'];
-        $deleteurl = new \moodle_url('/mod/groupproject/group.php', $deleteparams);
+        $deleteparams = ['roleid' => $role->id, 'action' => 'delete'];
+        $deleteurl = new \moodle_url('/mod/groupproject/role.php', $deleteparams);
         $deleteconfirm = new \confirm_action(get_string('confirmdelete', 'mod_groupproject'));
         $links .= $OUTPUT->action_icon(
             $deleteurl,
@@ -139,4 +113,5 @@ class group_table extends \table_sql
 
         return $links;
     }
+
 }

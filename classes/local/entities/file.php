@@ -7,13 +7,13 @@ class file extends entity {
     public static $TABLE = 'groupproject_files';
 
     /** @var int $groupid Id of the group uploaded the file  */
-    private $groupid;
+    protected $groupid;
     /** @var int $fielid Id of the file stored in teh files table */
-    private $fielid;
+    protected $fielid;
     /** @var int $timecreated  File creation unix timestamp */
-    private $timecreated;
+    protected $timecreated;
     /** @var int $timemodified File modification unix timestamp  */
-    private $timemodified;
+    protected $timemodified;
 
     /**
      * @param int $groupid

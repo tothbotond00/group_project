@@ -6,15 +6,15 @@ class grade extends entity {
     public static $TABLE = 'groupproject_grades';
 
     /** @var int $groupid Id of the group who got the grade */
-    private $groupid;
+    protected $groupid;
     /** @var int $grader Id of the person who graded */
-    private $grader;
+    protected $grader;
     /** @var float $timecreated  The grade itself */
-    private $grade;
+    protected $grade;
     /** @var int $timemodified Grade modification unix timestamp  */
-    private $timemodified;
+    protected $timemodified;
     /** @var int $timecreated Grade creation unix timestamp  */
-    private $timecreated;
+    protected $timecreated;
 
     /**
      * @param int $id

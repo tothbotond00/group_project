@@ -7,13 +7,13 @@ class comment extends entity{
     public static $TABLE = 'groupproject_comments';
 
     /** @var int $groupid The ID of the group */
-    private $groupid;
+    protected $groupid;
     /** @var int $userid The ID of the user*/
-    private $userid;
+    protected $userid;
     /** @var string $comment The comment */
-    private $comment;
+    protected $comment;
     /** @var int $timecreated Comment creation timestamp */
-    private $timecreated;
+    protected $timecreated;
 
     /**
      * @param int $groupid

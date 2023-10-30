@@ -10,13 +10,13 @@ class role extends entity {
     public static $TABLE = 'groupproject_roles';
 
     /** @var string $name Name of the role */
-    private $name;
+    protected $name;
     /** @var string $name Description of the role */
-    private $description;
+    protected $description;
     /** @var int $timecreated  Role creation unix timestamp */
-    private $timecreated;
+    protected $timecreated;
     /** @var int $timecreated  Role modification unix timestamp */
-    private $timemodified;
+    protected $timemodified;
 
     /**
      * @param string $name
@@ -55,11 +55,11 @@ class role extends entity {
     }
 
     /**
-     * @return string
+     * @return stdClass
      */
-    public function getDescription(): string
+    public function getDescription(): \stdClass
     {
-        return $this->description;
+        return json_decode($this->description);
     }
 
     /**
