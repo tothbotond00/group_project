@@ -50,10 +50,21 @@ class mod_groupproject_mod_form extends moodleform_mod {
         $this->standard_intro_elements();
 
         //-------------------------------------------------------
+
+        $this->standard_grading_coursemodule_elements();
+
         $this->standard_coursemodule_elements();
 
         //-------------------------------------------------------
         $this->add_action_buttons();
+    }
 
+    public function add_completion_rules() {
+        $mform =& $this->_form;
+
+        $mform->addElement('advcheckbox', 'completionsubmit', '', get_string('completionsubmit', 'groupproject'));
+        // Enable this completion rule by default.
+        $mform->setDefault('completionsubmit', 1);
+        return array('completionsubmit');
     }
 }

@@ -1,0 +1,24 @@
+<link href="templates/style.css" type="text/css" rel="stylesheet" />
+{{^hasGroup}}
+    <h2>{{#str}} no_group, mod_groupproject {{/str}}</h2>
+{{/hasGroup}}
+{{#hasGroup}}
+    <div class="commentContainer" style="overflow: hidden">
+        <div id="comments" style="overflow-y: scroll;height: 100%;">
+            {{#comments}}
+                <div class="bubbleWrapper">
+                    <div class="inlineContainer">
+                        <img class="inlineIcon" src="{{userpix}}">
+                        <div class="otherBubble {{side}}">
+                            {{message}}
+                        </div>
+                    </div>
+                    <span class="{{side}}">
+                        {{time}}
+                    </span>
+                </div>
+            {{/comments}}
+        </div>
+    </div>
+    <script src="../amd/src/student_group_comments.js"></script>
+{{/hasGroup}}

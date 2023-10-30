@@ -18,6 +18,8 @@ class entity_factory {
             $record->name,
             $record->intro,
             $record->introformat,
+            $record->duedate,
+            $record->grade,
             $record->timecreated,
             $record->timemodified
         );
@@ -26,6 +28,7 @@ class entity_factory {
     public static function create_group_from_stdclass(\stdClass $record) : group {
         return new group(
             $record->id,
+            $record->groupprojectid,
             $record->name,
             $record->idnumber,
             $record->size,

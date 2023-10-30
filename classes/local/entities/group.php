@@ -25,12 +25,16 @@
 namespace mod_groupproject\local\entities;
 use core_group\reportbuilder\datasource\groups;
 use mod_groupproject\local\factories\entity_factory;
+use mod_groupproject\local\loaders\entity_loader;
 
 class group extends entity {
 
     /** @var string $TABLE DB table of class */
     public static $TABLE = 'groupproject_groups';
 
+
+    /** @var int $groupprojectid Id of the groupproject instance */
+    private $groupprojectid;
     /** @var string $name Name of the group  */
     private $name;
     /** @var ?string $idnumber Idnumber of group */
@@ -54,6 +58,7 @@ class group extends entity {
      */
     public function __construct(
         int $id,
+        int $groupprojectid,
         string $name,
         ?string $idnumber,
         int $size,
@@ -67,6 +72,16 @@ class group extends entity {
         $this->size = $size;
         $this->timecreated = $timecreated;
         $this->timemodified = $timemodified;
+    }
+
+    public function getGroupprojectid(): int
+    {
+        return $this->groupprojectid;
+    }
+
+    public function setGroupprojectid(int $groupprojectid): void
+    {
+        $this->groupprojectid = $groupprojectid;
     }
 
     /**
@@ -107,6 +122,7 @@ class group extends entity {
 
         $DB->delete_records('groupproject_user_assign', ['groupid' => $this->id]);
         $DB->delete_records('groupproject_comments', ['groupid' => $this->id]);
+        $DB->delete_records('groupproject_grades', ['groupid' => $this->id]);
         $files = $DB->get_records('groupproject_files', ['groupid' => $this->id]);
         foreach ($files as $file){
             $file = entity_factory::create_file_from_stdclass($file);
@@ -114,6 +130,21 @@ class group extends entity {
         }
 
         parent::delete();
+    }
+
+    public function getUsers(){
+        global $DB;
+        return $DB->get_records_select('groupproject_user_assign', 'userid',array('groupid' => $this->id));
+    }
+
+    public function getComments() {
+        global $DB;
+        $records = $DB->get_records('groupproject_comments',array('groupid' => $this->id));
+        $comments = array();
+        foreach ($records as $record) {
+            $comments[] = entity_factory::create_comment_from_stdclass($record);
+        }
+        return $comments;
     }
 
 }
