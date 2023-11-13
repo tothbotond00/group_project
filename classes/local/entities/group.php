@@ -174,9 +174,18 @@ class group extends entity {
         parent::delete();
     }
 
+    public function getUserIds(){
+        global $DB;
+        $userids = [];
+        foreach ($DB->get_records('groupproject_user_assign', array('groupid' => $this->id)) as $record){
+            $userids[] = $record->userid;
+        }
+        return $userids;
+    }
+
     public function getUsers(){
         global $DB;
-        return $DB->get_records_select('groupproject_user_assign', 'userid',array('groupid' => $this->id));
+        return $DB->get_records('groupproject_user_assign', array('groupid' => $this->id));
     }
 
     public function getComments() {

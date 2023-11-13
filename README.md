@@ -6,3 +6,13 @@ This plugin makes it possible to assign students to different groups to work tog
 The full detailed documentation can be found in the disclosed pdf written in Hungarian.
 
 This project is a my Thesis work.
+
+Technologies used in this project that I will mention in my thesis:
+- Grunt
+- JQuery
+- Eslint
+- Cron
+- Mustache template
+- PHPUnit
+- Gherkin
+- AJAX + REST protocoll

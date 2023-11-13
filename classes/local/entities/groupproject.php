@@ -5,6 +5,7 @@ namespace mod_groupproject\local\entities;
 use completion_info;
 use core\context;
 use mod_groupproject\local\factories\entity_factory;
+use mod_groupproject\local\loaders\entity_loader;
 
 class groupproject extends entity {
 
@@ -280,13 +281,33 @@ class groupproject extends entity {
         $event->trigger();
     }
 
-    public function userHasGroup(): group|bool
+    public function userHasGroup($userid = 0): group|bool
     {
-        global $USER;
+        global $USER, $DB;
+        $user = new \stdClass();
+        if($userid == 0) $user = $USER;
+        else $user = $DB->get_record('user', ['id' => $userid]);
         foreach ($this->groups as $group){
-            if(in_array($USER->id,$group->getUsers())) return $group;
+            if(in_array($user->id,$group->getUserIds())) return $group;
         }
         return false;
+    }
+
+    public function getPossibleUsers() {
+        $users = [];
+        foreach($this->getGroups() as $group){
+            if(!empty($group_users = $group->getUsers())){
+                $users = array_merge($users + $group_users);
+            }
+        }
+        $enrolled_users = get_enrolled_users($this->getContext()->get_course_context());
+        $possible_users = [];
+        foreach ($enrolled_users as $enrolled_user){
+            if(!in_array($enrolled_user->id, $users)){
+                $possible_users[$enrolled_user->id] = $enrolled_user;
+            }
+        }
+        return $possible_users;
     }
 
 }

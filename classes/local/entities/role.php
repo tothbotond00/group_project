@@ -38,6 +38,13 @@ class role extends entity {
         $this->timemodified = $timemodified;
     }
 
+    public static function getAllRoles()
+    {
+        global $DB;
+        $empty = new \stdClass(); $empty->id = '0'; $empty->name = ' - ';
+        return [$empty] + $DB->get_records(static::$TABLE);
+    }
+
     /**
      * @return string
      */

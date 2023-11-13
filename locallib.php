@@ -3,8 +3,10 @@
 use mod_groupproject\local\entities\group;
 use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\entities\role;
+use mod_groupproject\local\entities\user_assign;
 use mod_groupproject\local\generator\template_generator;
 use \mod_groupproject\local\loaders\entity_loader;
+use mod_groupproject\output\comment_form;
 use mod_groupproject\output\group_form;
 use mod_groupproject\output\group_table;
 use mod_groupproject\output\role_form;
@@ -32,14 +34,20 @@ function view(groupproject $groupproject, context $context, bool $success = fals
         return $o;
     }
 
-    return view_comments($groupproject);
+    return view_comments($groupproject, $context);
 }
 
-function view_comments(groupproject $groupproject) : string{
+function view_comments(groupproject $groupproject, context $context) : string{
     $o = '';
 
     $renderer = get_renderer();
+    $group = $groupproject->userHasGroup();
     $o .= $renderer->render_from_template('mod_groupproject/student_group_comments', template_generator::generate_student_group_project_data($groupproject));
+    if($group){
+        $mform = new comment_form(new moodle_url('/mod/groupproject/group_chat.php',
+            ['id' => $context->instanceid]));
+        $o .= $mform->render();
+    }
     return $o;
 }
 
@@ -151,4 +159,34 @@ function delete_role_gp($roleid) {
     entity_loader::role_loader($roleid)->delete();
     $url = new moodle_url('/mod/groupproject/manage_roles.php');
     redirect($url);
+}
+
+function user_view(groupproject $groupproject, context $context, int $groupid) : string {
+    global $PAGE, $OUTPUT;
+    $o = '';
+    $jQueryData = $_POST["jQueryData"];
+    $jQueryData = json_decode($jQueryData);
+    if(!empty($jQueryData)){
+        $response = user_assign::process_json_data($jQueryData, $groupid);
+        if($response->success){
+            $url = new moodle_url('/mod/groupproject/manage_groups.php', ['id' => $context->instanceid, 'success' => true]);
+            redirect($url);
+        }else {
+            $o .= $OUTPUT->notification(get_string($response->code, 'mod_groupproject'), 'error');
+        }
+    }
+
+    $users = $groupproject->getPossibleUsers();
+    $roles = role::getAllRoles();
+    $group = entity_loader::group_loader($groupid);
+    $size = $group->getSize();
+    $groupusers = $group->getUsers();
+
+    $o .= html_writer::tag('h1', get_string('add_users', 'mod_groupproject'));
+    $o .= html_writer::tag('div','',['id' => 'user_view']);
+    $o .= html_writer::end_tag('div');
+    $PAGE->requires->js_call_amd('mod_groupproject/add_users', 'init',
+        [$users, $roles, $size, $context->instanceid, $groupid, $groupusers]);
+
+    return $o;
 }

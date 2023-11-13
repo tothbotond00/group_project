@@ -94,7 +94,7 @@ class group_table extends \table_sql
 
     public function  col_groupsize($group){
         $group_obj = entity_factory::create_group_from_stdclass($group);
-        return   count($group_obj->getUsers()) . ' / ' . $group->size ;
+        return   count($group_obj->getUserIds()) . ' / ' . $group->size ;
     }
 
     public function  col_fileupload($group){
@@ -111,7 +111,7 @@ class group_table extends \table_sql
 
         //Add Users
         $addusers = ['id' => $context->instanceid, 'groupid' => $group->id];
-        $usersurl = new \moodle_url('/mod/groupproject/group.php', $addusers);
+        $usersurl = new \moodle_url('/mod/groupproject/user.php', $addusers);
 
         $links .= $OUTPUT->action_icon(
             $usersurl,

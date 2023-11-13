@@ -43,13 +43,17 @@ function groupproject_add_instance($groupproject) {
     return $returnid;
 }
 
-function groupproject_update_instance($groupproject){
+function groupproject_update_instance($module){
     global $DB;
 
-    $groupproject->timecreated  = time();
-    $groupproject->timemodified = $groupproject->timecreated;
-
-    $groupproject = entity_factory::create_groupproject_from_stdclass($groupproject);
+    print_r($module);
+    $groupproject = entity_loader::groupproject_loader($module->instance);
+    $groupproject->setTimemodified(time());
+    $groupproject->setName($module->name);
+    $groupproject->setIntro($module->intro);
+    $groupproject->setIntroformat($module->introformat);
+    $groupproject->setDuedate(0);
+    $groupproject->setGrade($module->grade);
     return $groupproject->update();
 }
 

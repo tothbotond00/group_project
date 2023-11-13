@@ -7,10 +7,10 @@
         <div id="comments" style="overflow-y: scroll;height: 100%;">
             {{#comments}}
                 <div class="bubbleWrapper">
-                    <div class="inlineContainer">
-                        <img class="inlineIcon" src="{{userpix}}">
+                    <div class="inlineContainer {{side}}">
+                        {{{userpix}}}
                         <div class="otherBubble {{side}}">
-                            {{message}}
+                            {{{message}}}
                         </div>
                     </div>
                     <span class="{{side}}">
@@ -20,5 +20,9 @@
             {{/comments}}
         </div>
     </div>
-    <script src="../amd/src/student_group_comments.js"></script>
+    {{#js}}
+        require(['mod_groupproject/student_group_comments'], function(module) {
+            module.init('{{{userpix}}}', {{userid}}, {{groupid}});
+        });
+    {{/js}}
 {{/hasGroup}}

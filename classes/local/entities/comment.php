@@ -2,6 +2,9 @@
 
 namespace mod_groupproject\local\entities;
 
+use mod_groupproject\local\factories\entity_factory;
+use mod_groupproject\local\loaders\entity_loader;
+
 class comment extends entity{
 
     public static $TABLE = 'groupproject_comments';
@@ -97,6 +100,23 @@ class comment extends entity{
     public function setTimecreated(int $timecreated): void
     {
         $this->timecreated = $timecreated;
+    }
+
+    public static function getGroupComments(int $count, $groupid, $userid){
+        global $DB;
+        $records = $DB->get_records(self::$TABLE, ['groupid' => $groupid], 'timecreated DESC');
+
+        $difference = count($records) - $count;
+
+        $comments = [];
+        foreach($records as $record){
+            if($difference === 0) break;
+            if($userid == $record->userid) continue;
+            $comments[] = entity_factory::create_comment_from_stdclass($record);
+            $difference--;
+        }
+
+        return $comments;
     }
 
 }
