@@ -2,8 +2,8 @@
 
 namespace mod_groupproject\local\loaders;
 
+use mod_groupproject\local\entities\capability;
 use mod_groupproject\local\entities\comment;
-use mod_groupproject\local\entities\file;
 use mod_groupproject\local\entities\group;
 use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\entities\role;
@@ -51,16 +51,6 @@ class entity_loader {
         return entity_factory::create_user_assign_from_stdclass($record);
     }
 
-    public static function file_loader($id) : ?file {
-        global $DB;
-
-        $record = $DB->get_record(file::$TABLE, array('id' => $id));
-
-        if(empty($record)) return null;
-
-        return entity_factory::create_file_from_stdclass($record);
-    }
-
     public static function comment_loader($id) : ?comment {
         global $DB;
 
@@ -69,5 +59,15 @@ class entity_loader {
         if(empty($record)) return null;
 
         return entity_factory::create_comment_from_stdclass($record);
+    }
+
+    public static function capability_loader($id) : ?capability{
+        global $DB;
+
+        $record = $DB->get_record(capability::$TABLE, array('id' => $id));
+
+        if(empty($record)) return null;
+
+        return entity_factory::crate_capability_from_stdclass($record);
     }
 }

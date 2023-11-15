@@ -2,12 +2,16 @@
 
 namespace mod_groupproject\output;
 
+use core_admin\local\settings\autocomplete;
+use mod_groupproject\local\entities\capability;
 use mod_groupproject\local\entities\role;
 use mod_groupproject\local\loaders\entity_loader;
 
 class role_form extends \moodleform {
     protected function definition()
     {
+        global $CFG, $DB;
+
         $mform = $this->_form;
         $strrequired = get_string('required');
         $roleid = $this->_customdata['roleid'];
@@ -22,11 +26,24 @@ class role_form extends \moodleform {
         $mform->setType('description',PARAM_RAW);
         $mform->addRule('description', $strrequired, 'required', null, 'client');
 
+        $capabilities = capability::get_valid_capabilities();
+
+        $options = [
+            'multiple' => true,
+            'noselectionstring' => get_string('none', 'mod_groupproject'),
+        ];
+
+
+        $mform->addElement('autocomplete', 'capabilities', get_string('role_capabilities', 'mod_groupproject'), $capabilities, $options);
+        $mform->setType('capabilities', PARAM_INT);
+
         if(!empty($roleid)){
             $role = entity_loader::role_loader($roleid);
 
             $mform->setDefault('name',$role->getName());
             $mform->setDefault('description',$role->getDescription());
+            $mform->setDefault('capabilities',capability::get_role_assignments($role->getId()));
+            print_r($mform->_submitValues);
         }
 
         $mform->addElement('submit','submit', get_string('submit'));
@@ -48,3 +65,4 @@ class role_form extends \moodleform {
         return $errors;
     }
 }
+

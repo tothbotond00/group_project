@@ -42,8 +42,8 @@ export const initilaiseForm = (users,roles,groupusers) => {
     for (const [key, value] of Object.entries(groupusers)) {
         const generated_div = generateFormElement(users, roles);
         $(generated_div).insertBefore($("#add_line"));
-        $(`#users:eq(${i})`).val(value.userid).change();
-        $(`#roles:eq(${i})`).val(value.roleid).change();
+        $(`.users:eq(${i})`).val(value.userid).change();
+        $(`.roles:eq(${i})`).val(value.roleid).change();
         i++;
     }
     $('.delete_row').click(function(event) {
@@ -80,12 +80,12 @@ export const generateFormElement = (users, roles) => {
     return '<div style="margin-bottom: 20px" class="form_element">' +
                 '<label for="users">Felhasználó</label>\n' +
                 '\n' +
-                '<select name="users" id="users" class="custom-select" style="margin-right: 20px">\n' +
+                '<select name="users" id="users" class="custom-select users" style="margin-right: 20px">\n' +
                     user_options +
                 '</select>' +
                 '<label for="roles">Szerepkör</label>\n' +
                 '\n' +
-                '<select name="roles" id="roles" class="custom-select" style="margin-right: 20px">\n' +
+                '<select name="roles" id="roles" class="custom-select roles" style="margin-right: 20px">\n' +
                     role_options +
                 '</select>' +
                 '<a class="action-icon delete_row">' +

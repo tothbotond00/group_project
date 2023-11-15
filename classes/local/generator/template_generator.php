@@ -6,7 +6,6 @@ use mod_groupproject\local\entities\comment;
 use mod_groupproject\local\entities\group;
 use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\loaders\entity_loader;
-use theme_boost\output\core_renderer;
 
 class template_generator
 {

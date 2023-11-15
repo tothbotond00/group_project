@@ -38,7 +38,7 @@ class role extends entity {
         $this->timemodified = $timemodified;
     }
 
-    public static function getAllRoles()
+    public static function get_all_roles()
     {
         global $DB;
         $empty = new \stdClass(); $empty->id = '0'; $empty->name = ' - ';
@@ -120,6 +120,33 @@ class role extends entity {
         }
 
         parent::delete();
+    }
+
+    public function update_capabilities($capabilities)
+    {
+        global $DB;
+        $DB->delete_records(capability::$TABLE, ['roleid' => $this->id]);
+
+        foreach ($capabilities as $capability){
+            $record = new \stdClass();
+            $record->roleid = $this->id;
+            $record->capabilityid = $capability;
+            capability::create($record);
+        }
+    }
+
+    public function has_capability($capability): bool
+    {
+        global $DB;
+
+        $paramteres = [];
+        $sql = "SELECT gc.id
+                  FROM {groupproject_capabilities} gc 
+                  JOIN {capabilities} c ON c.id = gc.capabilityid
+                 WHERE gc.roleid = {$this->id} AND c.name = :name ";
+        $paramteres['name'] = $capability;
+        $returns = $DB->get_records_sql($sql, $paramteres);
+        return !empty($returns);
     }
 
 }

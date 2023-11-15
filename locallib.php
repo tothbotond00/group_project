@@ -1,5 +1,6 @@
 <?php
 
+use mod_groupproject\local\entities\capability;
 use mod_groupproject\local\entities\group;
 use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\entities\role;
@@ -11,6 +12,7 @@ use mod_groupproject\output\group_form;
 use mod_groupproject\output\group_table;
 use mod_groupproject\output\role_form;
 use mod_groupproject\output\role_table;
+use mod_groupproject\output\submission_form;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -18,6 +20,14 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot.'/course/moodleform_mod.php');
 require_once($CFG->dirroot . '/mod/groupproject/lib.php');
 require_once($CFG->libdir . '/filelib.php');
+
+define('GROUPPROJECT_SUBMISSION_FILEAREA', 'groupproject_submission');
+
+define('GROUPPROJECT_FELXIBLE_CAPIBILITIES', array(
+    'mod/groupproject:adduser',
+    'mod/groupproject:modifygroup',
+    'mod/groupproject:managegroup',
+));
 
 function get_renderer() {
     global $PAGE;
@@ -27,7 +37,7 @@ function get_renderer() {
 function view(groupproject $groupproject, context $context, bool $success = false) : string {
     global $OUTPUT;
 
-    if(has_capability('mod/groupproject:managegroup', $context)){
+    if(capability::has_capability($groupproject,'mod/groupproject:managegroup', $context)){
         $o = '';
         if($success) $o .= $OUTPUT->notification(get_string('savesuccess', 'mod_groupproject'), 'success');
         $o .=  manage_groups($groupproject);
@@ -55,7 +65,7 @@ function manage_groups(groupproject $groupproject): string {
     global $PAGE,$CFG;
     $o = '';
 
-    $table = new group_table('mod_groupproject_groups', $PAGE->url);
+    $table = new group_table('mod_groupproject_groups', $PAGE->url, $groupproject);
     $table->build_table();
     $table->out(10, true);
     $o .= html_writer::tag('a',
@@ -129,9 +139,10 @@ function add_role() : string {
         $data->timecreated = time();
         $data->timemodified = $data->timecreated;
         $data->description = json_encode($data->description);
-        role::create($data);
+        $roleid = role::create($data);
+        entity_loader::role_loader($roleid)->update_capabilities($data->capabilities);
         $url = new moodle_url('/mod/groupproject/manage_roles.php');
-        redirect($url);
+        //redirect($url);
     }
 
     return $form->render();
@@ -148,6 +159,7 @@ function modify_role(int $roleid) : string {
         $role->setDescription(json_encode($data->description));
         $role->setTimemodified(time());
         $role->update();
+        $role->update_capabilities($data->capabilities);
         $url = new moodle_url('/mod/groupproject/manage_roles.php');
         redirect($url);
     }
@@ -177,7 +189,7 @@ function user_view(groupproject $groupproject, context $context, int $groupid) :
     }
 
     $users = $groupproject->getPossibleUsers();
-    $roles = role::getAllRoles();
+    $roles = role::get_all_roles();
     $group = entity_loader::group_loader($groupid);
     $size = $group->getSize();
     $groupusers = $group->getUsers();
@@ -187,6 +199,28 @@ function user_view(groupproject $groupproject, context $context, int $groupid) :
     $o .= html_writer::end_tag('div');
     $PAGE->requires->js_call_amd('mod_groupproject/add_users', 'init',
         [$users, $roles, $size, $context->instanceid, $groupid, $groupusers]);
+
+    return $o;
+}
+
+function group_submissions(groupproject $groupproject, context $context) : string{
+    $o = '';
+
+    $group = $groupproject->userHasGroup();
+    $mform = new submission_form(new moodle_url('/mod/groupproject/group_submission.php',
+        ['id' => $context->instanceid]),['context' => $context, 'groupid' => $group->getId()]);
+
+    if($data = $mform->get_data()){
+        file_save_draft_area_files(
+            $data->submission,
+            $context->id,
+            'mod_groupproject',
+            GROUPPROJECT_SUBMISSION_FILEAREA,
+            $group->getId(),
+        );
+    }
+
+    $o .= $mform->render();
 
     return $o;
 }

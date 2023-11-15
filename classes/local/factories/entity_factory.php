@@ -2,8 +2,8 @@
 
 namespace mod_groupproject\local\factories;
 
+use mod_groupproject\local\entities\capability;
 use mod_groupproject\local\entities\comment;
-use mod_groupproject\local\entities\file;
 use mod_groupproject\local\entities\group;
 use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\entities\role;
@@ -56,16 +56,6 @@ class entity_factory {
         );
     }
 
-    public static function create_file_from_stdclass(\stdClass $record) : file {
-        return new file(
-            $record->id,
-            $record->groupid,
-            $record->fileid,
-            $record->timecreated,
-            $record->timemodified
-        );
-    }
-
     public static function create_comment_from_stdclass(\stdClass $record) : comment {
         return new comment(
             $record->id,
@@ -74,5 +64,10 @@ class entity_factory {
             $record->comment,
             $record->timecreated
         );
+    }
+
+    public static function crate_capability_from_stdclass(\stdClass $record): capability
+    {
+        return new capability($record->id, $record->roleid, $record->capiblityid);
     }
 }

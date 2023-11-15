@@ -35,7 +35,7 @@ export const commentWritten = (self, comment, time, user) => {
     return '<div class="bubbleWrapper">\n' +
         `                    <div class="inlineContainer ${user}">\n` +
         `                        ${self}` +
-        `                        <div class="otherBubble ${user}">\n` +
+        `                        <div class="${user}Bubble ${user}">\n` +
         `                            ${comment}\n` +
         '                        </div>\n' +
         '                    </div>\n' +

@@ -23,7 +23,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use mod_groupproject\local\entities\group;
+use mod_groupproject\local\entities\capability;
 use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\factories\entity_factory;
 use mod_groupproject\local\loaders\entity_loader;
@@ -46,7 +46,6 @@ function groupproject_add_instance($groupproject) {
 function groupproject_update_instance($module){
     global $DB;
 
-    print_r($module);
     $groupproject = entity_loader::groupproject_loader($module->instance);
     $groupproject->setTimemodified(time());
     $groupproject->setName($module->name);
@@ -93,29 +92,19 @@ function groupproject_reset_userdata($data){
 
 function groupproject_supports($feature) {
     switch($feature) {
+        case FEATURE_GROUPINGS:
+        case FEATURE_BACKUP_MOODLE2:
+        case FEATURE_PLAGIARISM:
         case FEATURE_GROUPS:
             return false;
-        case FEATURE_GROUPINGS:
-            return false;
-        case FEATURE_MOD_INTRO:
-            return true;
         case FEATURE_COMPLETION_TRACKS_VIEWS:
-            return true;
         case FEATURE_COMPLETION_HAS_RULES:
-            return true;
         case FEATURE_GRADE_HAS_GRADE:
-            return true;
         case FEATURE_GRADE_OUTCOMES:
-            return true;
-        case FEATURE_BACKUP_MOODLE2:
-            return false;
         case FEATURE_SHOW_DESCRIPTION:
-            return true;
         case FEATURE_ADVANCED_GRADING:
-            return true;
-        case FEATURE_PLAGIARISM:
-            return false;
         case FEATURE_COMMENT:
+        case FEATURE_MOD_INTRO:
             return true;
         case FEATURE_MOD_PURPOSE:
             return MOD_PURPOSE_ASSESSMENT;
@@ -125,7 +114,7 @@ function groupproject_supports($feature) {
 }
 
 function groupproject_extend_settings_navigation(settings_navigation $settings, navigation_node $modnode) {
-    global $CFG;
+    global $CFG, $USER;
 
     // We want to add these new nodes after the Edit settings node, and before the
     // Locally assigned roles node. Of course, both of those are controlled by capabilities.
@@ -138,15 +127,68 @@ function groupproject_extend_settings_navigation(settings_navigation $settings, 
         $beforekey = $keys[$i + 1];
     }
 
-    $node = navigation_node::create(get_string('manage_groups', 'groupproject'),
-        new moodle_url('/mod/groupproject/manage_groups.php', ['id' => $settings->get_page()->cm->id]),
-        navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_managegroups', new pix_icon('t/edit', ''));
-    $modnode->add_node($node, $beforekey);
+    $groupproject = entity_loader::groupproject_loader($settings->get_page()->cm->instance);
 
-    $node = navigation_node::create(get_string('group_chat', 'groupproject'),
-        new moodle_url('/mod/groupproject/group_chat.php', ['id' => $settings->get_page()->cm->id]),
-        navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_groupchat', new pix_icon('t/edit', ''));
-    $modnode->add_node($node, $beforekey);
+    if(capability::has_capability($groupproject,'mod/groupproject:managegroup', $settings->get_page()->cm->context)){
+        $node = navigation_node::create(get_string('manage_groups', 'groupproject'),
+            new moodle_url('/mod/groupproject/manage_groups.php', ['id' => $settings->get_page()->cm->id]),
+            navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_managegroups', new pix_icon('t/edit', ''));
+        $modnode->add_node($node, $beforekey);
+    }
 
+    $group = $groupproject->userHasGroup($USER->id);
+    if($group){
+        $node = navigation_node::create(get_string('group_chat', 'groupproject'),
+            new moodle_url('/mod/groupproject/group_chat.php', ['id' => $settings->get_page()->cm->id]),
+            navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_groupchat', new pix_icon('t/edit', ''));
+        $modnode->add_node($node, $beforekey);
+
+        $node = navigation_node::create(get_string('group_submssion', 'groupproject'),
+            new moodle_url('/mod/groupproject/group_submission.php', ['id' => $settings->get_page()->cm->id]),
+            navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_groupsubmssion', new pix_icon('t/edit', ''));
+        $modnode->add_node($node, $beforekey);
+    }
+}
+
+function groupproject_get_file_areas($course, $cm, $context) {
+    global $CFG;
+    require_once($CFG->dirroot . '/mod/groupproject/locallib.php');
+
+    $areas = array(
+        GROUPPROJECT_SUBMISSION_FILEAREA => get_string('groupproject_submission', 'mod_groupproject'),
+    );
+    return $areas;
+}
+
+function groupproject_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=array()) {
+    global $DB;
+
+    if(key_exists($filearea, groupproject_get_file_areas($course, $cm, $context))){
+        $itemid = $args[0];
+        $files = $DB->get_records('files', ['itemid' => $itemid, 'component' => 'mod_groupproject', 'filearea' => $filearea]);
+        $fs = get_file_storage();
+
+        foreach ($files as $f) {
+            if((int)$f->filesize > 0) {
+                $file = $fs->get_file_by_id($f->id);
+                send_stored_file($file, null, 0, $forcedownload, $options);
+            }
+        }
+    }
+    send_file_not_found();
+}
+
+function mod_groupproject_get_path_from_pluginfile(string $filearea, array $args) : array {
+    // Get the filepath.
+    if (empty($args)) {
+        $filepath = '/';
+    } else {
+        $filepath = '/' . implode('/', $args) . '/';
+    }
+
+    return [
+        'itemid' => $args[0],
+        'filepath' => $filepath,
+    ];
 }
 

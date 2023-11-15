@@ -2,8 +2,10 @@
 
 namespace mod_groupproject\output;
 
+use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\factories\entity_factory;
 use mod_groupproject\local\loaders\entity_loader;
+use moodle_url;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -11,7 +13,10 @@ require_once($CFG->libdir.'/tablelib.php');
 
 class group_table extends \table_sql
 {
-    public function __construct($uniqueid, $url) {
+    /** @var groupproject  */
+    private $groupproject;
+
+    public function __construct($uniqueid, $url, groupproject $groupproject) {
         global $CFG;
         parent::__construct($uniqueid);
 
@@ -21,13 +26,14 @@ class group_table extends \table_sql
         $this->define_baseurl($url);
         // Define configs.
         $this->define_table_configs();
+        $this->groupproject = $groupproject;
     }
 
     private function define_table_columns()
     {
         $cols = array(
             'name' => get_string('groupname', 'mod_groupproject'),
-            'groupsize' => get_string('groupsize', 'mod_groupproject'),
+            'size' => get_string('groupsize', 'mod_groupproject'),
             'fileupload' => get_string('fileupload', 'mod_groupproject'),
             'actions' => get_string('actions', 'mod_groupproject'),
         );
@@ -42,6 +48,7 @@ class group_table extends \table_sql
         $this->sortable(true, 'groupname', SORT_ASC);
         $this->pageable(true);
         $this->no_sorting('actions');
+        $this->no_sorting('fileupload');
     }
 
     public function print_nothing_to_display() {
@@ -92,13 +99,43 @@ class group_table extends \table_sql
         return array($sql, $params);
     }
 
-    public function  col_groupsize($group){
+    public function get_sql_where() {
+        $groupprojectid = $this->groupproject->getId();
+        list($where, $params) = parent::get_sql_where();
+        $where .= "groupprojectid = {$groupprojectid}";
+        return [$where, $params];
+    }
+
+    public function  col_size($group){
         $group_obj = entity_factory::create_group_from_stdclass($group);
         return   count($group_obj->getUserIds()) . ' / ' . $group->size ;
     }
 
     public function  col_fileupload($group){
-        return 'nothing';
+        global $DB;
+        $file_storage = get_file_storage();
+        $filearea = GROUPPROJECT_SUBMISSION_FILEAREA;
+        $file = $DB->get_records_sql("SELECT *
+                                    FROM {files} f
+                                   WHERE f.component = 'mod_groupproject' 
+                                     AND f.filearea = '{$filearea}' 
+                                     AND itemid = {$group->id}
+                                     AND f.filesize <> 0 
+                                     HAVING MAX(f.timemodified)");
+        if(empty($file)) return get_string('no_file', 'mod_groupproject');
+        $uploaded_file = $file_storage->get_file_by_id(array_keys($file)[0]);
+
+        $url = \html_writer::tag('a',$uploaded_file->get_filename(),['href' => moodle_url::make_pluginfile_url(
+            $uploaded_file->get_contextid(),
+            $uploaded_file->get_component(),
+            $uploaded_file->get_filearea(),
+            $uploaded_file->get_itemid(),
+            $uploaded_file->get_filepath(),
+            $uploaded_file->get_filename(),
+            true
+        )->out()]) . \html_writer::end_tag('a');
+
+        return $url;
     }
 
     public function col_actions($group){

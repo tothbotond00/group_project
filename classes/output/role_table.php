@@ -2,6 +2,8 @@
 
 namespace mod_groupproject\output;
 
+use mod_groupproject\local\entities\capability;
+
 class role_table extends \table_sql {
     public function __construct($uniqueid, $url) {
         global $CFG;
@@ -20,6 +22,7 @@ class role_table extends \table_sql {
         $cols = array(
             'name' => get_string('rolename', 'mod_groupproject'),
             'description' => get_string('roledescription', 'mod_groupproject'),
+            'capabilities' => get_string('capabilities', 'mod_groupproject'),
             'actions' => get_string('actions', 'mod_groupproject'),
         );
 
@@ -33,6 +36,7 @@ class role_table extends \table_sql {
         $this->sortable(true, 'rolename', SORT_ASC);
         $this->pageable(true);
         $this->no_sorting('actions');
+        $this->no_sorting('capabilities');
     }
 
     public function print_nothing_to_display() {
@@ -85,6 +89,15 @@ class role_table extends \table_sql {
 
     public function col_description($role){
         return json_decode($role->description)->text;
+    }
+
+    public function col_capabilities($role){
+        $capabilities = capability::get_role_assignments($role->id, 'name');
+        $o = '';
+        foreach ($capabilities as $capability){
+            $o .= get_string($capability, 'mod_groupproject') . '<br>';
+        }
+        return $o;
     }
 
     public function col_actions($role){
