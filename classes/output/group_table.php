@@ -1,15 +1,23 @@
 <?php
 
+/**
+ * Group table.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\output;
 
+use mod_groupproject\local\entities\grade;
 use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\factories\entity_factory;
 use mod_groupproject\local\loaders\entity_loader;
-use moodle_url;
 
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir.'/tablelib.php');
+require_once ($CFG->dirroot . '/mod/groupproject/locallib.php');
 
 class group_table extends \table_sql
 {
@@ -35,6 +43,7 @@ class group_table extends \table_sql
             'name' => get_string('groupname', 'mod_groupproject'),
             'size' => get_string('groupsize', 'mod_groupproject'),
             'fileupload' => get_string('fileupload', 'mod_groupproject'),
+            'grade' => get_string('grade', 'mod_groupproject'),
             'actions' => get_string('actions', 'mod_groupproject'),
         );
 
@@ -48,6 +57,7 @@ class group_table extends \table_sql
         $this->sortable(true, 'groupname', SORT_ASC);
         $this->pageable(true);
         $this->no_sorting('actions');
+        $this->no_sorting('grade');
         $this->no_sorting('fileupload');
     }
 
@@ -108,34 +118,22 @@ class group_table extends \table_sql
 
     public function  col_size($group){
         $group_obj = entity_factory::create_group_from_stdclass($group);
-        return   count($group_obj->getUserIds()) . ' / ' . $group->size ;
+        return   count($group_obj->get_user_ids()) . ' / ' . $group->size ;
     }
 
     public function  col_fileupload($group){
+        return get_group_file(entity_loader::group_loader($group->id));
+    }
+
+    public function col_grade($group){
         global $DB;
-        $file_storage = get_file_storage();
-        $filearea = GROUPPROJECT_SUBMISSION_FILEAREA;
-        $file = $DB->get_records_sql("SELECT *
-                                    FROM {files} f
-                                   WHERE f.component = 'mod_groupproject' 
-                                     AND f.filearea = '{$filearea}' 
-                                     AND itemid = {$group->id}
-                                     AND f.filesize <> 0 
-                                     HAVING MAX(f.timemodified)");
-        if(empty($file)) return get_string('no_file', 'mod_groupproject');
-        $uploaded_file = $file_storage->get_file_by_id(array_keys($file)[0]);
 
-        $url = \html_writer::tag('a',$uploaded_file->get_filename(),['href' => moodle_url::make_pluginfile_url(
-            $uploaded_file->get_contextid(),
-            $uploaded_file->get_component(),
-            $uploaded_file->get_filearea(),
-            $uploaded_file->get_itemid(),
-            $uploaded_file->get_filepath(),
-            $uploaded_file->get_filename(),
-            true
-        )->out()]) . \html_writer::end_tag('a');
-
-        return $url;
+        $grade = $DB->get_record(grade::$TABLE, ['groupid' => $group->id]);
+        if(empty($grade)){
+            return get_string('no_grade', 'mod_groupproject');
+        }
+        $grade = entity_loader::grade_loader($grade->id);
+        return $grade->convert_grade();
     }
 
     public function col_actions($group){
@@ -144,7 +142,7 @@ class group_table extends \table_sql
         $links = '';
 
         $groupproject = entity_loader::groupproject_loader($group->groupprojectid);
-        $context = $groupproject->getContext();
+        $context = $groupproject->get_context();
 
         //Add Users
         $addusers = ['id' => $context->instanceid, 'groupid' => $group->id];
@@ -152,7 +150,7 @@ class group_table extends \table_sql
 
         $links .= $OUTPUT->action_icon(
             $usersurl,
-            new \pix_icon('t/move', get_string('add_users', 'mod_groupproject'))
+            new \pix_icon('t/user', get_string('add_users', 'mod_groupproject'))
         );
 
         // Modify
@@ -162,6 +160,15 @@ class group_table extends \table_sql
         $links .= $OUTPUT->action_icon(
             $modifyurl,
             new \pix_icon('t/edit', get_string('modify', 'mod_groupproject'))
+        );
+
+        // Grade
+        $gradeparams = ['id' => $context->instanceid, 'groupid' => $group->id, 'action' => 'grade'];
+        $gradeurl = new \moodle_url('/mod/groupproject/group.php', $gradeparams);
+
+        $links .= $OUTPUT->action_icon(
+            $gradeurl,
+            new \pix_icon('t/editinline', get_string('grade', 'mod_groupproject')),
         );
 
         // Delete.

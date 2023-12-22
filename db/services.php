@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * External services of the plugin.
+ * Mostly used for the ajax calls of the JQuery frontend.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 $functions = array(
 
     'mod_groupproject_post_comment' => array(

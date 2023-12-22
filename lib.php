@@ -1,26 +1,10 @@
 <?php
 
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
 /**
- * Library of functions and constants for module groupproject
+ * Library of functions and constants for module groupproject required by Moodle.
  *
  * @package   mod_groupproject
  * @copyright 2023 Tóth Botond
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 use mod_groupproject\local\entities\capability;
@@ -28,9 +12,18 @@ use mod_groupproject\local\entities\groupproject;
 use mod_groupproject\local\factories\entity_factory;
 use mod_groupproject\local\loaders\entity_loader;
 
+global $CFG;
+
 require_once($CFG->libdir . '/completionlib.php');
 
 /// STANDARD FUNCTIONS ///////////////////////////////////////////////////////////
+
+/**
+ * Called when a new course module is created for a groupproject instance.
+ * @param $groupproject
+ * @return bool|int
+ * @throws dml_exception
+ */
 function groupproject_add_instance($groupproject) {
     global $DB;
 
@@ -39,10 +32,17 @@ function groupproject_add_instance($groupproject) {
 
     $returnid = groupproject::create($groupproject);
     $groupproject->id = $returnid;
+    groupproject_grade_item_update($groupproject);
 
     return $returnid;
 }
 
+/**
+ * Used when coursemodule data gets updated. Updates the instance too.
+ * @param $module
+ * @return bool
+ * @throws dml_exception
+ */
 function groupproject_update_instance($module){
     global $DB;
 
@@ -53,9 +53,18 @@ function groupproject_update_instance($module){
     $groupproject->setIntroformat($module->introformat);
     $groupproject->setDuedate(0);
     $groupproject->setGrade($module->grade);
+    $groupproject->setDuedate($module->duedate);
+    groupproject_grade_item_update($module);
     return $groupproject->update();
 }
 
+/**
+ * Deletes the instance with id. Only called in adhoc task, so this can create phantom data if you don't run cron often.
+ * @param $id
+ * @return bool
+ * @throws coding_exception
+ * @throws dml_exception
+ */
 function groupproject_delete_instance($id){
     global $DB;
 
@@ -77,6 +86,13 @@ function groupproject_delete_instance($id){
     return true;
 }
 
+/**
+ * Resets userdata for this instance. Deletes all groups, chat history, files and grades associated with this activity.
+ * @param $data
+ * @return array|array[]
+ * @throws coding_exception
+ * @throws dml_exception
+ */
 function groupproject_reset_userdata($data){
     global $DB;
 
@@ -85,20 +101,25 @@ function groupproject_reset_userdata($data){
     $groupprojects = $DB->get_records(groupproject::$TABLE, array('course' => $courseid));
     foreach ($groupprojects as $groupproject){
         $groupproject = entity_factory::create_groupproject_from_stdclass($groupproject);
-        $status = $groupproject->resetUserdata();
+        $status = $groupproject->reset_user_data();
     }
     return $status;
 }
 
+/**
+ * Standard supports function required by Moodle.
+ * @param $feature
+ * @return bool|string|null
+ */
 function groupproject_supports($feature) {
     switch($feature) {
         case FEATURE_GROUPINGS:
-        case FEATURE_BACKUP_MOODLE2:
         case FEATURE_PLAGIARISM:
         case FEATURE_GROUPS:
-            return false;
-        case FEATURE_COMPLETION_TRACKS_VIEWS:
         case FEATURE_COMPLETION_HAS_RULES:
+            return false;
+        case FEATURE_BACKUP_MOODLE2:
+        case FEATURE_COMPLETION_TRACKS_VIEWS:
         case FEATURE_GRADE_HAS_GRADE:
         case FEATURE_GRADE_OUTCOMES:
         case FEATURE_SHOW_DESCRIPTION:
@@ -113,6 +134,15 @@ function groupproject_supports($feature) {
     }
 }
 
+/**
+ * Navigation node extension inside the activity module. Mostly depends on user capabilities.
+ * @param settings_navigation $settings
+ * @param navigation_node $modnode
+ * @return void
+ * @throws coding_exception
+ * @throws dml_exception
+ * @throws moodle_exception
+ */
 function groupproject_extend_settings_navigation(settings_navigation $settings, navigation_node $modnode) {
     global $CFG, $USER;
 
@@ -136,7 +166,7 @@ function groupproject_extend_settings_navigation(settings_navigation $settings, 
         $modnode->add_node($node, $beforekey);
     }
 
-    $group = $groupproject->userHasGroup($USER->id);
+    $group = $groupproject->user_has_group($USER->id);
     if($group){
         $node = navigation_node::create(get_string('group_chat', 'groupproject'),
             new moodle_url('/mod/groupproject/group_chat.php', ['id' => $settings->get_page()->cm->id]),
@@ -147,9 +177,32 @@ function groupproject_extend_settings_navigation(settings_navigation $settings, 
             new moodle_url('/mod/groupproject/group_submission.php', ['id' => $settings->get_page()->cm->id]),
             navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_groupsubmssion', new pix_icon('t/edit', ''));
         $modnode->add_node($node, $beforekey);
+
+        if(capability::has_capability($groupproject, 'mod/groupproject:adduser', $settings->get_page()->cm->context)){
+            $node = navigation_node::create(get_string('add_user', 'groupproject'),
+                new moodle_url('/mod/groupproject/user.php', ['id' => $settings->get_page()->cm->id, 'groupid' => $group->getId()]),
+                navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_add_user', new pix_icon('t/edit', ''));
+            $modnode->add_node($node, $beforekey);
+        }
+
+        if(capability::has_capability($groupproject, 'mod/groupproject:modifygroup', $settings->get_page()->cm->context)){
+            $node = navigation_node::create(get_string('modify_group', 'groupproject'),
+                new moodle_url('/mod/groupproject/group.php',
+                    ['id' => $settings->get_page()->cm->id, 'groupid' => $group->getId(), 'action' => 'modify']),
+                navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_modify_group', new pix_icon('t/edit', ''));
+            $modnode->add_node($node, $beforekey);
+        }
     }
 }
 
+/**
+ * Returns every valid file area, that can be handled by this plugin.
+ * @param $course
+ * @param $cm
+ * @param $context
+ * @return array
+ * @throws coding_exception
+ */
 function groupproject_get_file_areas($course, $cm, $context) {
     global $CFG;
     require_once($CFG->dirroot . '/mod/groupproject/locallib.php');
@@ -160,6 +213,20 @@ function groupproject_get_file_areas($course, $cm, $context) {
     return $areas;
 }
 
+/**
+ * Plugin file sending. Checks if the required file exists and if it can be send tot the user.
+ * @param $course
+ * @param $cm
+ * @param $context
+ * @param $filearea
+ * @param $args
+ * @param $forcedownload
+ * @param array $options
+ * @return void
+ * @throws coding_exception
+ * @throws dml_exception
+ * @throws moodle_exception
+ */
 function groupproject_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=array()) {
     global $DB;
 
@@ -178,6 +245,12 @@ function groupproject_pluginfile($course, $cm, $context, $filearea, $args, $forc
     send_file_not_found();
 }
 
+/**
+ * Generates path from plugin-file. Mostly used by Moodle file picker for other activities.
+ * @param string $filearea
+ * @param array $args
+ * @return array
+ */
 function mod_groupproject_get_path_from_pluginfile(string $filearea, array $args) : array {
     // Get the filepath.
     if (empty($args)) {
@@ -190,5 +263,53 @@ function mod_groupproject_get_path_from_pluginfile(string $filearea, array $args
         'itemid' => $args[0],
         'filepath' => $filepath,
     ];
+}
+
+/**
+ * Updates the gradeitems associated with this activity in the course.
+ * @param $groupproject
+ * @param $grades
+ * @return int
+ */
+function groupproject_grade_item_update($groupproject, $grades=null) {
+    global $CFG;
+    require_once($CFG->libdir.'/gradelib.php');
+
+    if (!isset($groupproject->courseid)) {
+        $groupproject->courseid = $groupproject->course;
+    }
+
+    $params = array('itemname'=> $groupproject->name, 'idnumber'=> $groupproject->cmidnumber);
+
+    // gradetype = GRADE_TYPE_TEXT else GRADE_TYPE_NONE.
+    $gradefeedbackenabled = false;
+
+    if ($groupproject->grade > 0) {
+        $params['gradetype'] = GRADE_TYPE_VALUE;
+        $params['grademax']  = $groupproject->grade;
+        $params['grademin']  = 0;
+
+    } else if ($groupproject->grade < 0) {
+        $params['gradetype'] = GRADE_TYPE_SCALE;
+        $params['scaleid']   = -$groupproject->grade;
+
+    } else {
+        // $assign->grade == 0 and no feedback enabled.
+        $params['gradetype'] = GRADE_TYPE_NONE;
+    }
+
+    if ($grades  === 'reset') {
+        $params['reset'] = true;
+        $grades = null;
+    }
+
+    return grade_update('mod/groupproject',
+        $groupproject->courseid,
+        'mod',
+        'groupproject',
+        $groupproject->id,
+        0,
+        $grades,
+        $params);
 }
 

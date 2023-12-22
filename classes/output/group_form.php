@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Group form.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\output;
 
 use mod_groupproject\local\entities\group;
@@ -34,7 +41,7 @@ class group_form extends \moodleform
             $mform->setDefault('size',$group->getSize());
         }
 
-        $mform->addElement('submit','submit', get_string('submit'));
+        $mform->addElement('submit','submit', get_string('create'));
     }
 
     function validation($data, $files)

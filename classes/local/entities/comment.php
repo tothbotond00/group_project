@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Comment entity.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\local\entities;
 
 use mod_groupproject\local\factories\entity_factory;
@@ -102,7 +109,15 @@ class comment extends entity{
         $this->timecreated = $timecreated;
     }
 
-    public static function getGroupComments(int $count, $groupid, $userid){
+    /**
+     * Returns the new comments for an external service.
+     * @param int $count
+     * @param $groupid
+     * @param $userid
+     * @return array
+     * @throws \dml_exception
+     */
+    public static function get_group_comments(int $count, $groupid, $userid){
         global $DB;
         $records = $DB->get_records(self::$TABLE, ['groupid' => $groupid], 'timecreated DESC');
 

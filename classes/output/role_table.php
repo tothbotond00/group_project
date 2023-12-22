@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Role table.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\output;
 
 use mod_groupproject\local\entities\capability;

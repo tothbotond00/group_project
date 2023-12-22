@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Role entity.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\local\entities;
 
 use mod_groupproject\local\factories\entity_factory;
@@ -38,6 +45,11 @@ class role extends entity {
         $this->timemodified = $timemodified;
     }
 
+    /**
+     * Returns every available role.
+     * @return array|\stdClass[]
+     * @throws \dml_exception
+     */
     public static function get_all_roles()
     {
         global $DB;
@@ -109,6 +121,11 @@ class role extends entity {
         $this->timemodified = $timemodified;
     }
 
+    /**
+     * Deletes every role by setting every user_role to null in the given tables.
+     * @return void
+     * @throws \dml_exception
+     */
     public function delete()
     {
         global $DB;
@@ -122,6 +139,12 @@ class role extends entity {
         parent::delete();
     }
 
+    /**
+     * Updates the capibilities that a role can have.
+     * @param $capabilities
+     * @return void
+     * @throws \dml_exception
+     */
     public function update_capabilities($capabilities)
     {
         global $DB;
@@ -135,6 +158,12 @@ class role extends entity {
         }
     }
 
+    /**
+     * Checks if the role has the given capibility
+     * @param $capability
+     * @return bool
+     * @throws \dml_exception
+     */
     public function has_capability($capability): bool
     {
         global $DB;

@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * User assign entity.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\local\entities;
 
 class user_assign extends entity {
@@ -30,6 +37,12 @@ class user_assign extends entity {
         $this->roleid = $roleid;
     }
 
+    /**
+     * Processes the json data from JQuery frontend side.
+     * @param mixed $jQueryData
+     * @param int $groupid
+     * @return \stdClass
+     */
     public static function process_json_data(mixed $jQueryData,int $groupid)
     {
         $response = new \stdClass();
@@ -45,25 +58,32 @@ class user_assign extends entity {
             }
         }
 
-        self::deleteAll($groupid);
+        self::delete_all($groupid);
 
-        self::createAll($jQueryData, $groupid);
+        self::create_all($jQueryData, $groupid);
         $response->success = true;
         return $response;
     }
 
-    private static function deleteAll(int $groupid)
+    /**
+     * Makes the group empty.
+     * @param int $groupid
+     * @return void
+     * @throws \dml_exception
+     */
+    private static function delete_all(int $groupid)
     {
         global $DB;
         $DB->delete_records(user_assign::$TABLE, ['groupid' => $groupid]);
     }
 
     /**
+     * Creates the data from the given json from the JQuery frontend.
      * @param mixed $jQueryData
      * @param int $groupid
      * @return void
      */
-    public static function createAll(mixed $jQueryData, int $groupid): void
+        public static function create_all(mixed $jQueryData, int $groupid): void
     {
         foreach ($jQueryData as $data) {
             if ($data->userid == 0) {

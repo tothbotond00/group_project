@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Groupproject entity.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\local\entities;
 
 use completion_info;
@@ -60,7 +67,7 @@ class groupproject extends entity {
         $this->grade = $grade;
         $this->timecreated = $timecreated;
         $this->timemodified = $timemodified;
-        $this->loadGroups();
+        $this->load_groups();
     }
 
     /**
@@ -191,6 +198,9 @@ class groupproject extends entity {
         $this->timemodified = $timemodified;
     }
 
+    /**
+     * @return array
+     */
     public function getGroups(): array
     {
         return $this->groups;
@@ -204,13 +214,23 @@ class groupproject extends entity {
         $this->groups = $groups;
     }
 
-    public function getCourseInstance() :?\stdClass
+    /**
+     * Returns the course instance of the groupproject.
+     * @return \stdClass|null
+     * @throws \dml_exception
+     */
+    public function get_course_instance() :?\stdClass
     {
         global $DB;
         return $DB->get_record('course', array('id' => $this->course));
     }
 
-    public function getCourseModule() : \stdClass
+    /**
+     * Return the course module of the instance.
+     * @return \stdClass
+     * @throws \dml_exception
+     */
+    public function get_course_module() : \stdClass
     {
         global $DB;
         $courseid = $this->course;
@@ -219,18 +239,32 @@ class groupproject extends entity {
         return $DB->get_record('course_modules', array('course' => $courseid, 'module' => $moduleid,'instance' => $instanceid));
     }
 
-    public function getInstance() : \stdClass
+    /**
+     * Casts this class to stdclass.
+     * @return \stdClass
+     */
+    public function get_instance() : \stdClass
     {
         return (object)(array)$this;
     }
 
-    public function getContext() : context
+    /**
+     * Returns the context of the instance.
+     * @return context
+     * @throws \dml_exception
+     */
+    public function get_context() : context
     {
-        $coursemoudleid = $this->getCourseModule()->id;
+        $coursemoudleid = $this->get_course_module()->id;
         return \context_module::instance($coursemoudleid);
     }
 
-    private function loadGroups()
+    /**
+     * Loads the group entities into the groups.
+     * @return void
+     * @throws \dml_exception
+     */
+    private function load_groups()
     {
         global $DB;
 
@@ -242,7 +276,12 @@ class groupproject extends entity {
         }
     }
 
-    public function resetUserdata(){
+    /**
+     * Deletes user data.
+     * @return array[]
+     * @throws \coding_exception
+     */
+    public function reset_user_data(){
         $componentstr = get_string('modulenameplural', 'projecttask');
         foreach ($this->groups as $group){
             $group->delete();
@@ -255,8 +294,14 @@ class groupproject extends entity {
         );
     }
 
+    /**
+     * Deletes every single group in the groupproject.
+     * @return void
+     * @throws \dml_exception
+     */
     public function delete()
     {
+        $this->load_groups();
         foreach ($this->groups as $group) {
             $group->delete();
         }
@@ -264,15 +309,35 @@ class groupproject extends entity {
         parent::delete();
     }
 
-    public function setModuleViewed() {
-        $completion = new completion_info($this->getCourseInstance());
-        $completion->set_module_viewed($this->getCourseModule());
+    /**
+     * Returns the corresponding gradeitem in the course.
+     * @return mixed|\stdClass|null
+     * @throws \dml_exception
+     */
+    public function get_gradeitem(){
+        global $DB;
+
+        $gradeitem = $DB->get_record('grade_items', ['itemmodule' => 'groupproject' , 'iteminstance' => $this->getId()]);
+
+        if(empty($gradeitem)) return null;
+        return $gradeitem;
+    }
+
+    /**
+     * Triggres module viewed event for the activity.
+     * @return void
+     * @throws \coding_exception
+     * @throws \dml_exception
+     */
+    public function set_module_viewed() {
+        $completion = new completion_info($this->get_course_instance());
+        $completion->set_module_viewed($this->get_course_module());
 
         // Trigger the course module viewed event.
-        $instance = $this->getInstance();
+        $instance = $this->get_instance();
         $params = [
             'objectid' => $this->id,
-            'context' => $this->getContext()
+            'context' => $this->get_context()
         ];
 
         $event = \mod_groupproject\event\course_module_viewed::create($params);
@@ -281,26 +346,40 @@ class groupproject extends entity {
         $event->trigger();
     }
 
-    public function userHasGroup($userid = 0): group|bool
+    /**
+     * Checks if the user is in any of the gorups.
+     * @param $userid
+     * @return group|bool
+     * @throws \dml_exception
+     */
+    public function user_has_group($userid = 0): group|bool
     {
         global $USER, $DB;
         $user = new \stdClass();
         if($userid == 0) $user = $USER;
         else $user = $DB->get_record('user', ['id' => $userid]);
         foreach ($this->groups as $group){
-            if(in_array($user->id,$group->getUserIds())) return $group;
+            if(in_array($user->id,$group->get_user_ids())) return $group;
         }
         return false;
     }
 
-    public function getPossibleUsers() {
+    /**
+     * Returns every enrolled user except the users in the groups of the activity.
+     * @param $groupid
+     * @return array
+     * @throws \coding_exception
+     * @throws \dml_exception
+     */
+    public function get_possible_users($groupid) {
         $users = [];
+        $this->load_groups();
         foreach($this->getGroups() as $group){
-            if(!empty($group_users = $group->getUsers())){
+            if(!empty($group_users = $group->get_user_ids()) && $groupid != $group->getId()){
                 $users = array_merge($users + $group_users);
             }
         }
-        $enrolled_users = get_enrolled_users($this->getContext()->get_course_context());
+        $enrolled_users = get_enrolled_users($this->get_context()->get_course_context());
         $possible_users = [];
         foreach ($enrolled_users as $enrolled_user){
             if(!in_array($enrolled_user->id, $users)){

@@ -1,5 +1,7 @@
 <?php
 
+global $PAGE, $OUTPUT;
+
 require_once('../../config.php');
 require_once ('locallib.php');
 
@@ -21,7 +23,7 @@ $PAGE->set_url($url);
 echo $OUTPUT->header();
 
 $groupproject = \mod_groupproject\local\loaders\entity_loader::groupproject_loader($cm->instance);
-$groupproject->setModuleViewed();
+$groupproject->set_module_viewed();
 
 echo view($groupproject, $context);
 

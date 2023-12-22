@@ -1,6 +1,6 @@
 <?php
 
-use mod_groupproject\local\loaders\entity_loader;
+global $PAGE, $OUTPUT, $CFG;
 
 require_once('../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
@@ -19,7 +19,7 @@ $action = required_param('action', PARAM_TEXT);
 
 $context = context_system::instance();
 
-$url = new moodle_url('/mod/groupproject/manage_roles.php', array('action' => $action));
+$url = new moodle_url('/mod/groupproject/role.php', array('action' => $action));
 
 $PAGE->set_url($url);
 

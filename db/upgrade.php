@@ -37,7 +37,6 @@
  *
  * @package   mod_groupproject
  * @copyright 2023 Tóth Botond
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();

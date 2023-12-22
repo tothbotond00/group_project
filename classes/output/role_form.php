@@ -1,8 +1,14 @@
 <?php
 
+/**
+ * Role form.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\output;
 
-use core_admin\local\settings\autocomplete;
 use mod_groupproject\local\entities\capability;
 use mod_groupproject\local\entities\role;
 use mod_groupproject\local\loaders\entity_loader;
@@ -43,10 +49,9 @@ class role_form extends \moodleform {
             $mform->setDefault('name',$role->getName());
             $mform->setDefault('description',$role->getDescription());
             $mform->setDefault('capabilities',capability::get_role_assignments($role->getId()));
-            print_r($mform->_submitValues);
         }
 
-        $mform->addElement('submit','submit', get_string('submit'));
+        $mform->addElement('submit','submit', get_string('create'));
     }
 
     function validation($data, $files)

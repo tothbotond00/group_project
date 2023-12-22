@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Course module viewed event
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\event;
 
 defined('MOODLE_INTERNAL') || die();

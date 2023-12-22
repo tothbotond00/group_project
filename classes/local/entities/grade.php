@@ -1,6 +1,15 @@
 <?php
 
+/**
+ * Grade entity.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\local\entities;
+
+use mod_groupproject\local\loaders\entity_loader;
 
 class grade extends entity {
     public static $TABLE = 'groupproject_grades';
@@ -118,5 +127,25 @@ class grade extends entity {
     public function setTimecreated(int $timecreated): void
     {
         $this->timecreated = $timecreated;
+    }
+
+    /**
+     * Converts the current grade to a string that can be read in the system.
+     * @return float|string
+     * @throws \dml_exception
+     */
+    public function convert_grade()
+    {
+        global $DB;
+
+        $group = entity_loader::group_loader($this->groupid);
+        $groupproject = entity_loader::groupproject_loader($group->getGroupprojectid());
+        $gradeitem = $groupproject->get_gradeitem();
+        if(!empty($gradeitem->scaleid)){
+            $scale = $DB->get_record('scale', ['id' => $gradeitem->scaleid]);
+            $scales = explode(',',$scale->scale);
+            return $scales[($this->grade) - 1];
+        }
+        return $this->grade;
     }
 }

@@ -1,6 +1,15 @@
 <?php
 
+/**
+ * Submission form.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\output;
+
+global $CFG;
 
 require_once($CFG->dirroot . '/mod/groupproject/locallib.php');
 

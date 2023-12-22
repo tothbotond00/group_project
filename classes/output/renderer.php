@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Renderer.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\output;
 
 defined('MOODLE_INTERNAL') || die();

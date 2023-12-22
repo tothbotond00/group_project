@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Capability entity.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 namespace mod_groupproject\local\entities;
 
 use mod_groupproject\local\loaders\entity_loader;
@@ -58,6 +65,12 @@ class capability extends entity
     }
 
 
+    /**
+     * Returns the valid capibilities that a role can have.
+     * @return array
+     * @throws \coding_exception
+     * @throws \dml_exception
+     */
     public static function get_valid_capabilities(){
         global $CFG, $DB;
 
@@ -78,6 +91,13 @@ class capability extends entity
         return $capabilities;
     }
 
+    /**
+     *
+     * @param $roleid
+     * @param $param
+     * @return array
+     * @throws \dml_exception
+     */
     public static function get_role_assignments($roleid, $param = 'id'){
         global $DB;
 
@@ -91,15 +111,25 @@ class capability extends entity
         return $capabilities;
     }
 
-    public static function has_capability(groupproject $groupproject, $capability,\context $context): bool{
+    /**
+     * Checks in the given groupproject if a user has capbility.
+     * @param groupproject $groupproject
+     * @param $capability
+     * @param \context $context
+     * @return bool
+     * @throws \coding_exception
+     * @throws \dml_exception
+     */
+    public static function has_capability(groupproject $groupproject, $capability,\context $context,?int $groupid = null): bool{
         global $USER;
 
         if(has_capability($capability, $context)) {
             return true;
         }
-        $group = $groupproject->userHasGroup();
+        $group = $groupproject->user_has_group();
         if($group){
-            $roleid = $group->getUserRoleId($USER->id);
+            if(!empty($groupid) && $group->getId() != $groupid) return false;
+            $roleid = $group->get_user_role_id($USER->id);
             if(!empty($roleid)){
                 $role = entity_loader::role_loader($roleid);
                 return $role->has_capability($capability);

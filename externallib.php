@@ -1,6 +1,15 @@
 <?php
 
+/**
+ * External service handling class.
+ *
+ * @package    mod_groupproject
+ * @copyright  2023 Tóth Botond
+ */
+
 defined('MOODLE_INTERNAL') || die;
+
+global $CFG;
 
 require_once("$CFG->dirroot/user/externallib.php");
 
@@ -13,6 +22,10 @@ use mod_groupproject\local\generator\template_generator;
 
 class mod_groupproject_external extends \core_external\external_api {
 
+    /**
+     * post_comment external function parameter list
+     * @return external_function_parameters
+     */
     public static function post_comment_parameters() {
         return new external_function_parameters(
             array(
@@ -30,6 +43,14 @@ class mod_groupproject_external extends \core_external\external_api {
         );
     }
 
+    /**
+     * post_comments endpoint data receiving end.
+     * @param int $userid
+     * @param int $groupid
+     * @param string $content
+     * @return array
+     * @throws dml_exception
+     */
     public static function post_comment(int $userid, int $groupid, string $content) {
         global $DB;
         $record = new stdClass();
@@ -41,10 +62,18 @@ class mod_groupproject_external extends \core_external\external_api {
         return [];
     }
 
+    /**
+     * post_comments endpoint returns definition.
+     * @return external_warnings
+     */
     public static function post_comment_returns() {
         return new external_warnings();
     }
 
+    /**
+     * get_comment external function parameter list
+     * @return external_function_parameters
+     */
     public static function get_comments_parameters(){
         return new external_function_parameters(
             array(
@@ -62,10 +91,23 @@ class mod_groupproject_external extends \core_external\external_api {
         );
     }
 
+    /**
+     * get_comments endpoint data return.
+     * @param $count
+     * @param $userid
+     * @param $groupid
+     * @return mixed
+     * @throws coding_exception
+     * @throws dml_exception
+     */
     public static function get_comments($count, $userid, $groupid){
         return template_generator::generate_new_comments((int)$count, $groupid, $userid);
     }
 
+    /**
+     * get_comments endpoint returns definition.
+     * @return void
+     */
     public static function get_comments_returns (){
         new external_multiple_structure(
             new external_single_structure(

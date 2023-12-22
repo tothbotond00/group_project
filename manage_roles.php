@@ -1,5 +1,7 @@
 <?php
 
+global $PAGE, $OUTPUT, $CFG;
+
 require_once('../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
 require_once('locallib.php');

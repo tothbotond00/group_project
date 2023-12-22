@@ -1,32 +1,21 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Moodle is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Group class.
+ * Group entity.
  *
  * @package    mod_groupproject
  * @copyright  2023 Tóth Botond
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace mod_groupproject\local\entities;
-use core\check\environment\publicpaths;
-use core_group\reportbuilder\datasource\groups;
+use grade_grade;
+use grade_item;
 use mod_groupproject\local\factories\entity_factory;
 use mod_groupproject\local\loaders\entity_loader;
+
+global $CFG;
+
+require_once ($CFG->libdir . '/gradelib.php');
 
 class group extends entity {
 
@@ -76,21 +65,35 @@ class group extends entity {
         $this->timemodified = $timemodified;
     }
 
+    /**
+     * @return int
+     */
     public function getGroupprojectid(): int
     {
         return $this->groupprojectid;
     }
 
+    /**
+     * @param int $groupprojectid
+     * @return void
+     */
     public function setGroupprojectid(int $groupprojectid): void
     {
         $this->groupprojectid = $groupprojectid;
     }
 
+    /**
+     * @return string
+     */
     public function getName()
     {
         return $this->name;
     }
 
+    /**
+     * @param $name
+     * @return void
+     */
     public function setName($name){
         $this->name = $name;
     }
@@ -159,18 +162,36 @@ class group extends entity {
         $this->timemodified = $timemodified;
     }
 
+    /**
+     * Deletes the group user assignments, grades, comments and files related to the group.
+     * @return void
+     * @throws \dml_exception
+     */
     public function delete()
     {
         global $DB;
 
+        //Related table data deletion
         $DB->delete_records(user_assign::$TABLE, ['groupid' => $this->id]);
         $DB->delete_records(comment::$TABLE, ['groupid' => $this->id]);
         $DB->delete_records(grade::$TABLE, ['groupid' => $this->id]);
 
+        //Submission deletion
+        $groupproject = entity_loader::groupproject_loader($this->groupprojectid);
+        $context = $groupproject->get_context();
+        $fs = new \file_storage();
+        list($in, $inparams) = $DB->get_in_or_equal([$this->id], SQL_PARAMS_NAMED);
+        $fs->delete_area_files_select($context->id, 'mod_groupproject','groupproject_submission',$in, $inparams);
+
         parent::delete();
     }
 
-    public function getUserIds(){
+    /**
+     * Returns the userids in an array that belong to the group.
+     * @return array
+     * @throws \dml_exception
+     */
+    public function get_user_ids(){
         global $DB;
         $userids = [];
         foreach ($DB->get_records(user_assign::$TABLE, array('groupid' => $this->id)) as $record){
@@ -179,18 +200,36 @@ class group extends entity {
         return $userids;
     }
 
-    public function getUserRoleId($userid){
+
+    /**
+     * Returns the role of the user in the group. Null if the user has no role.
+     * @param $userid
+     * @return false|mixed
+     * @throws \dml_exception
+     */
+    public function get_user_role_id($userid){
         global $DB;
 
         return $DB->get_field(user_assign::$TABLE, 'roleid', ['groupid' => $this->id, 'userid' => $userid]);
     }
 
-    public function getUsers(){
+
+    /**
+     * Returns the user assings as stdclasses.
+     * @return array
+     * @throws \dml_exception
+     */
+    public function get_users(){
         global $DB;
         return $DB->get_records(user_assign::$TABLE, array('groupid' => $this->id));
     }
 
-    public function getComments() {
+    /**
+     * Returns the comments as comment entites.
+     * @return array
+     * @throws \dml_exception
+     */
+    public function get_comments() {
         global $DB;
         $records = $DB->get_records(comment::$TABLE,array('groupid' => $this->id));
         $comments = array();
@@ -198,6 +237,75 @@ class group extends entity {
             $comments[] = entity_factory::create_comment_from_stdclass($record);
         }
         return $comments;
+    }
+
+    /**
+     * Gives the grade to every user in the group from the parameter.
+     * @param $grade
+     * @return void
+     * @throws \dml_exception
+     */
+    public function grade_users($grade)
+    {
+        global $DB, $USER;
+        $groupproject = entity_loader::groupproject_loader($this->groupprojectid);
+        $gradeitem = $groupproject->get_gradeitem();
+        if($groupproject->getGrade() < 0) $grade += 1;
+        if(empty($gradeitem)) return;
+
+        //Updates every gradeitem for the users in the gorup
+        foreach ($DB->get_records(user_assign::$TABLE, array('groupid' => $this->id)) as $record){
+            $userid = $record->userid;
+            $gradegrade = new grade_grade(array('itemid'=>$gradeitem->id, 'userid'=>$userid));
+            if(empty($gradegrade)){
+                $gradegrade = new grade_grade([
+                    'itemid' => $gradeitem->id,
+                    'userid' => $userid,
+                    'rawgrade' => null,
+                    'rawgrademax' => $gradeitem->grademax,
+                    'rawgrademin' => $gradeitem->grademin,
+                    'rawscaleid' => $gradeitem->scaleid,
+                    'usermodified' => $USER->id,
+                    'finalgrade' => $grade,
+                    'timemodified' => time(),
+                    'aggreagtionstatus' => 'unknown']);
+                $gradegrade->insert('mod_groupproject');
+            }else {
+                $gradegrade->itemid = $gradeitem->id;
+                $gradegrade->userid = $userid;
+                $gradegrade->rawgrade = null;
+                $gradegrade->rawgrademax = $gradeitem->grademax;
+                $gradegrade->rawgrademin = $gradeitem->grademin;
+                $gradegrade->rawscaleid = $gradeitem->scaleid;
+                $gradegrade->finalgrade = (float)$grade;
+                $gradegrade->usermodified = $USER->id;
+                $gradegrade->aggregationstatus = 'unknown';
+                $gradegrade->timemodified = time();
+                if(empty($gradegrade->id)){
+                    $gradegrade->insert('mod_groupproject');
+                }
+                else $gradegrade->update('mod_groupproject');
+            }
+        }
+        $course_grade = grade_item::fetch_course_item($groupproject->getCourse());
+        $course_grade->force_regrading();
+
+        //Saves the grade to the grade table
+        if($groupgrade = $DB->get_record(grade::$TABLE, ['groupid' => $this->getId()])){
+            $groupgrade = entity_loader::grade_loader($groupgrade->id);
+            $groupgrade->setGrade($grade);
+            $groupgrade->setTimemodified(time());
+            $groupgrade->setGrader($USER->id);
+            $groupgrade->update();
+        }else {
+            $record = new \stdClass();
+            $record->groupid = $this->getId();
+            $record->timecreated = $record->timemodified = time();
+            $record->grader = $USER->id;
+            $record->grade = $grade;
+            grade::create($record);
+        }
+
     }
 
 }

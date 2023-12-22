@@ -2,6 +2,8 @@
 
 use mod_groupproject\local\loaders\entity_loader;
 
+global $PAGE, $OUTPUT;
+
 require_once('../../config.php');
 require_once('locallib.php');
 
@@ -25,14 +27,22 @@ $PAGE->set_url($url);
 echo $OUTPUT->header();
 
 $groupproject = entity_loader::groupproject_loader($cm->instance);
-$groupproject->setModuleViewed();
+$groupproject->set_module_viewed();
 
-if($action === 'add'){
-    echo add_group($groupproject,$context);
-}else if($action === 'modify'){
-    echo modify_group($groupproject, $context, $groupid);
-}else if ($action === 'delete'){
-    delete_group($groupproject, $context, $groupid);
+switch ($action){
+    case 'add':
+        echo add_group($groupproject,$context);
+        break;
+    case 'modify':
+        echo modify_group($groupproject, $context, $groupid);
+        break;
+    case 'grade':
+        echo grade_group($groupproject, $context, $groupid);
+        break;
+    case 'delete':
+        delete_group($groupproject, $context, $groupid);
+        break;
+    default:
 }
 
 echo $OUTPUT->footer();
