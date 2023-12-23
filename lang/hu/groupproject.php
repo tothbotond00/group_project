@@ -46,6 +46,7 @@ $string['roledescription'] = 'Szerepkör leírása';
 $string['rolename'] = 'Szerepkör neve';
 $string['role_capabilities'] = 'Szerepkör jogosultságai';
 $string['savesuccess'] = 'Sikeres mentés';
+$string['send'] = 'Üzenet küldése';
 $string['submission'] = 'Csoportfeladat leadása';
 $string['upload_file'] = 'Feltöltött file';
 $string['user_twice'] = 'Egy felhasználó többször szerepelt a felhasználók között!';

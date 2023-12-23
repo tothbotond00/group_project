@@ -39,6 +39,7 @@ define('GROUPPROJECT_FELXIBLE_CAPIBILITIES', array(
     'mod/groupproject:adduser',
     'mod/groupproject:modifygroup',
     'mod/groupproject:managegroup',
+    'mod/groupproject:creategroup',
     'mod/groupproject:submitfile'
 ));
 
@@ -123,7 +124,7 @@ function manage_groups(groupproject $groupproject, $context): string {
         array('class' => 'btn btn-outline-secondary btn-sm text-nowrap', 'style' => 'margin-top:20px;')),
         array('href' => $CFG->www . "/mod/groupproject/group.php?id={$groupproject->get_course_module()->id}&groupid=0&action=add"));
     $o .= html_writer::tag('a', get_string('manage_roles', 'mod_groupproject'),
-            array('href' => (new moodle_url("/mod/groupproject/role.php"))->out(), 'style' => "margin-left:70%;"));
+            array('href' => (new moodle_url("/mod/groupproject/manage_roles.php"))->out(), 'style' => "margin-left:70%;"));
     return $o;
 }
 
@@ -398,6 +399,7 @@ function group_submissions(groupproject $groupproject, context $context) : strin
             GROUPPROJECT_SUBMISSION_FILEAREA,
             $group->getId(),
         );
+        $o .= $OUTPUT->notification(get_string('savesuccess', 'mod_groupproject'), 'success');
     }
 
     $o .= $mform->render();

@@ -134,7 +134,7 @@ class grade extends entity {
      * @return float|string
      * @throws \dml_exception
      */
-    public function convert_grade()
+        public function convert_grade()
     {
         global $DB;
 

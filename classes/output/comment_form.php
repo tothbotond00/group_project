@@ -18,6 +18,6 @@ class comment_form extends \moodleform
 
         $mform->addElement('editor', 'comment', get_string('comment_write', 'mod_groupproject'));
 
-        $mform->addElement('submit', 'submit', get_string('send'));
+        $mform->addElement('submit', 'submit', get_string('send', 'mod_groupproject'));
     }
 }

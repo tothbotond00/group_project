@@ -90,6 +90,9 @@ class restore_groupproject_activity_structure_step extends restore_activity_stru
         // Add groupproject related files, no need to match by itemname (just internally handled context)
         $this->add_related_files('mod_groupproject', 'intro', null);
         // Add entries related files, matching by itemname (groupproject_group)
-        $this->add_related_files('mod_groupproject', 'groupproject_submission', 'groupproject_groups');
+        $userinfo = $this->get_setting_value('userinfo');
+        if($userinfo){
+            $this->add_related_files('mod_groupproject', 'groupproject_submission', 'groupproject_groups');
+        }
     }
 }

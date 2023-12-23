@@ -46,6 +46,7 @@ $string['roledescription'] = 'Role description';
 $string['rolename'] = 'Role name';
 $string['role_capabilities'] = 'Role capabilities';
 $string['savesuccess'] = 'Successfully saved';
+$string['send'] = 'Send';
 $string['submission'] = 'Submission';
 $string['upload_file'] = 'Uplaoded file';
 $string['user_twice'] = 'User can be only once in the group members!';

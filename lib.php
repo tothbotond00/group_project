@@ -54,6 +54,7 @@ function groupproject_update_instance($module){
     $groupproject->setDuedate(0);
     $groupproject->setGrade($module->grade);
     $groupproject->setDuedate($module->duedate);
+    $module->id = $module->instance;
     groupproject_grade_item_update($module);
     return $groupproject->update();
 }
@@ -69,19 +70,12 @@ function groupproject_delete_instance($id){
     global $DB;
 
     $groupproject = entity_loader::groupproject_loader($id);
+    $data = new \stdClass();
+    $data->courseid = $groupproject->getCourse();
+    $data->id = $id;
     $groupproject->delete();
 
-    if ($DB->get_record('groupproject', array('id' => $id))) {
-        return false;
-    }
-
-    if (!$cm = get_coursemodule_from_instance('groupproject', $id)) {
-        return false;
-    }
-
-    if (!$context = context_module::instance($cm->id, IGNORE_MISSING)) {
-        return false;
-    }
+    groupproject_grade_item_delete($data);
 
     return true;
 }
@@ -173,10 +167,12 @@ function groupproject_extend_settings_navigation(settings_navigation $settings, 
             navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_groupchat', new pix_icon('t/edit', ''));
         $modnode->add_node($node, $beforekey);
 
-        $node = navigation_node::create(get_string('group_submssion', 'groupproject'),
-            new moodle_url('/mod/groupproject/group_submission.php', ['id' => $settings->get_page()->cm->id]),
-            navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_groupsubmssion', new pix_icon('t/edit', ''));
-        $modnode->add_node($node, $beforekey);
+        if(capability::has_capability($groupproject, 'mod/groupproject:submitfile', $settings->get_page()->cm->context)){
+            $node = navigation_node::create(get_string('group_submssion', 'groupproject'),
+                new moodle_url('/mod/groupproject/group_submission.php', ['id' => $settings->get_page()->cm->id]),
+                navigation_node::TYPE_ACTIVITY, null, 'mod_groupproject_groupsubmssion', new pix_icon('t/edit', ''));
+            $modnode->add_node($node, $beforekey);
+        }
 
         if(capability::has_capability($groupproject, 'mod/groupproject:adduser', $settings->get_page()->cm->context)){
             $node = navigation_node::create(get_string('add_user', 'groupproject'),
@@ -311,5 +307,19 @@ function groupproject_grade_item_update($groupproject, $grades=null) {
         0,
         $grades,
         $params);
+}
+
+/**
+ * Delete grade item for given data
+ *
+ * @category grade
+ * @param object $data object
+ * @return int grade_item
+ */
+function groupproject_grade_item_delete($data) {
+    global $CFG;
+    require_once($CFG->libdir.'/gradelib.php');
+
+    return grade_update('mod/groupproject', $data->course, 'mod', 'groupproject', $data->id, 0, NULL, array('deleted'=>1));
 }
 
