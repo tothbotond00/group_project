@@ -1,0 +1,550 @@
+\chapter{Fejlesztői dokumentáció}
+\label{ch:impl}
+
+\section{Fejlesztés célja}
+
+A Moodle számos felhasználói igényt lefed a kurzusain belül, viszont a csoportos munkamegosztás szervezésére a rendszernek nincs konkrét dobozos megoldása. Különböző tevékenységmodulok működései támogatják például a csoportos feladatleadást, vagy egy fórumon belüli kommunikációt, viszont ezen tevékenységek egymástól függetlenül működnek és nincs lehetőségünk a funkciók összekötésére. A fejlesztés célja egy egyedi tevékenységmodul létrehozása, mely képes a csoportok kezelésére, feladatok kiosztására, illetve a csoporttagok közötti kommunikáció megvalósítására. Emellett a feladat leadása, majd értékelése is a modul részét fogja képezni. 
+
+A Moodle számos tevékenységmodullal operál, melyek segédprogramként kerültek megvalósításra, így új fejlesztése a Moodle által biztosított API-n keresztül történhet meg. Fontos, hogy az új segédprogram fejlesztése megfeleljen a Moodle fejlesztési szabványainak, így későbbi Moodle verziókban sem lesz nehéz integrálni a segédprogramot. A tevékenységmodulokkal szemben állított elvárásoknak meg kell felelnie az alkalmazásnak, így a fejlesztés során számos feladat elve adott, ezeken kívül szükséges a személyes fejlesztési célok megvalósítása és egy hosszútávon támogatható segédprogram fejlesztése.
+
+\section{Megvalósítási terv}
+
+Lényeges, hogy a modul harmonizáljon a keretrendszer által kínált összképpel és a felhasználói élménnyel. Ehhez felhasználjuk a megfelelő renderereket és objektumokat, hogy létrehozzuk a különböző felületi elemeket.
+
+A "Csoportfeladat" egy tevékenységmodul. A Moodle-ben rendszerint ezt a kurzuskezelő felületen keresztül lehet létrehozni és konfigurálni. A tevékenységmodulok létrehozásakor a tanároknak meg kell adniuk a következő információkat:
+\begin{compactitem}
+    \item A tevékenység neve: ez a név megjelenik a kurzusban, és a tanulók ezt használhatják a tevékenység megtalálásához.
+    \item A tevékenység leírása: ez a leírás segíti a tanulókat a tevékenység megértésében.
+    \item A tevékenység beállításai: ezek a beállítások szabályozzák a tevékenység működését.
+\end{compactitem}
+A beállítások szabályozhatják a értékelés módját, a feladat határidejét és a teljesítmény értékelésének módját.
+Ezen nézetek felületi megjelenése adott, így a tevékenységmodulon belüli nézetekről lesz fontos a drótvázterveket és sablonokat előkészíteni.
+
+\subsection{Drótváztervek}
+
+A modul nézeteinek tervezése során fontos, hogy a felületi elemek illeszkedjenek a Moodle arculatába. Ezért törekedni kell a minimális egyedi CSS és minél több beépített felületi elem használatára. A drótvázak a tevékenységmodul által generált környezet tartalmának bemutatására szolgálnak, így a rendszer által generált menüpontok és egyéb felületi elemek nem kerültek modellezésre. A drótváztervek Justinmind\footnote{\url{https://www.justinmind.com/}} segítségével készültek el.
+
+\subsubsection{Csoportok listázása}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/csoportok_kezelese_wire.png}
+	\caption{Csoportok kezelése drótvázterv}
+\end{figure}
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item Meglévő csoportok listázása táblázatban. Szükséges oszlopok és adatok megjelenítése.
+        \begin{compactitem}
+            \item Csoport nevének megjelenítése
+            \item Csoport jelenlegi létszámának és maximális létszámának megjelenítése (például 5/10 formátumban)
+            \item Csoport által leadott feladatmegoldás letöltési linkjének megjelenítése
+            \item Csoport értékelésének kiírása
+            \item Csoport műveleteinek megjelenítése
+        \end{compactitem}
+        \item Új csoport hozzáadása oldal elérése
+        \item Szerepkörök kezelése oldal elérése
+        \item Meglévő csoport adatainak módosítása (fogaskerék ikon)
+        \item Meglévő csoport törlése (kuka ikon)
+        \item Csoporthoz felhasználók hozzáadása (ember ikon)
+        \item Csoport értékelése (ceruza ikon)
+ \end{compactitem}
+
+\subsubsection{Csoport létrehozása és módosítása}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/csoport_letrehozasa_wire.png}
+	\caption{Csoport létrehozása drótvázterv}
+\end{figure}
+
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item  Csoport nevének, azonosítójának és méretének felvétele és validálása
+        \item Új csoport esetén, gombnyomásra adatok alapján új rekord létrehozása
+        \item Létező csoport esetén, gombnyomásra adatok alapján meglévő rekord frissítése
+ \end{compactitem}
+
+\subsubsection{Csoport értékelése}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/csoport_ertekelese_wire.png}
+	\caption{Csoport értékelése drótvázterv}
+\end{figure}
+
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item Modulon belül beállított pontozási módszer helyes megjelenítése:
+            \begin{compactitem}
+                \item Pontozási módszer esetén számbevitel mező megjelenítése
+                \item Skálázási módszer esetén a skála értékeinek megjelenítése a mezőben
+                \item Ha nincs módszer beállítva, ne jelenjen meg semmi
+            \end{compactitem}
+        \item Értékelés megadása után csoportok listázásánál jelenjen meg az eredmény
+        \item Minden csoporttag számára kerüljön az eredmény rögzítésre az erre fenntartott pontozási riportban (kurzus szinten)
+ \end{compactitem}
+
+\subsubsection{Csoporthoz felhasználók hozzáadása}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/felhasznalok_hozzaadasa_wire.png}
+	\caption{Csoporthoz felhasználók hozzáadása drótvázterv}
+\end{figure}
+
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item Jelenlegi csoporttagok megjelenítése a megfelelő szerepekkel a nevük mellett
+    \item Maximum annyi felhasználót tudjon az oldalt kezelő személy hozzáadni a csoporthoz, amennyi a csoport beállításainál definiálésra került.
+    \item Egy felhasználót nem lehet kétszer hozzáadni
+    \item Más csoportok tagjai ne jelenjenek meg a lehetséges felhasználók között
+    \item A kurzusba beíratott felhasználók jelenjenek meg a lehetséges felhasználók között
+    \item A felhasználókhoz lehet szerepkört rendelni, de ez nem kötelező
+    \item Űrlap leadása után a felhasználók a megfelelő szerepkörökkel a legyenek a csoport tagjai
+    \item Ha egy felhasználót töröltünk a csoportból, már ne legyen a csoport része
+    \
+ \end{compactitem}
+
+\subsubsection{Szerepkörök listázása}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/szerepkorok_kezelese_wire.png}
+	\caption{Szerepkörök kezelése drótvázterv}
+\end{figure}
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item Meglévő szerepkörök listázása táblázatban. Szükséges oszlopok és adatok megjelenítése.
+        \begin{compactitem}
+            \item Szerepkör nevének megjelenítése
+            \item Szerepkör leírásának megjelnítése (HTML adat)
+            \item Szerepkör jogosultságainak megtekintése
+            \item Szerepkör műveleteinek megjelenítése
+        \end{compactitem}
+        \item Új Szerepkör hozzáadása oldal elérése
+        \item Meglévő Szerepkör adatainak módosítása (fogaskerék ikon)
+        \item Meglévő Szerepkör törlése (kuka ikon)
+ \end{compactitem}
+
+\subsubsection{Szerepkörök létrehozása és módosítása}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/szerepkor_letrehozasa_wire.png}
+	\caption{Szerepkör létrehozása drótvázterv}
+\end{figure}
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item  Szerepkör nevének, leírásának és jogosultságainak felvétele és validálása
+         \item Felvehető jogosultságok megjelenítése
+        \item Új szerepkör esetén, gombnyomásra adatok alapján új rekord létrehozása
+        \item Létező szerepkör esetén, gombnyomásra adatok alapján meglévő rekord frissítése
+ \end{compactitem}
+
+\subsubsection{Feladat leadása}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/feladat_leadasa_wire.png}
+	\caption{Feladat leadása drótvázterv}
+\end{figure}
+
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item A beadási határidő ellenőrzése és oldalon lévő űrlap zárolása, ha a hallgató kifutott a feltöltési határidőből
+         \item Leadott fájl feltöltésének érzékelése, helyes feltöltés esetén felhasználó számára visszajelzés küldése
+ \end{compactitem}
+
+\subsubsection{Csoportos beszélgetés}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\textwidth]{images/csoportos_beszelgetes_wire.png}
+	\caption{Csoportos beszélgetés drótvázterv}
+\end{figure}
+
+\textbf{Oldal funkciói} :
+
+\begin{compactitem}
+	\item  A hallgató számára az eddigi üzenetek időrendben való megjelenítése
+    \item A hallgató új üzenetet írhat az erre a célra fenntartott szerkesztőben
+    \item Üzenet küldése esetén jelenjen meg a felhasználó számára az új üzenete a beszélgetési panelben
+    \item Ha egy másik felhasználó küldött üzenetet a rendszerben, rövidesen jelenjen meg üzenete a hallgató beszélgetési paneljében
+ \end{compactitem}
+
+\section{Adatbázis felépítése}
+
+A modul adattábláinak felhasználása a Moodle konvencióival összhangban van, és az ezeknek megfelelő relációs adatbázis struktúrát alkalmazza. A rendszer a Moodle által már tárolt adatokra és az ezeket tartalmazó táblákra épül. Az adattábla kapcsolatok a \ref{fig:example-1} ábrán találhatóak. A Moodle által használt prefix a \textit{mdl}, még a segédprogram által használt prefix a \textit{groupproject}, így könnyebben átlátható, a segédprogram által létrehozott táblák halmaza.
+
+\begin{figure}[H]
+	\centering{
+		\includegraphics[width=0.9\linewidth]{images/tabla_modell.png}}
+	\caption{Adattábla kapcsolatok}
+	\label{fig:example-1}
+\end{figure}
+Az ábrán nincsenek felültetve a Moodle által kezelt, viszont a kapcsolatok szempontjából nehezen modellezhető kapcsolatok. Ilyen típusú kapcsolatok és adatok tárolásáról, bővebben az  \ref{adat:egyeb-1} címsorban lesz szó.
+
+\subsection{Adattáblák}
+
+\subsubsection{\textbf{Mdl\_groupproject: Kurzuson belüli tevékenységmodul instancia táblája}}
+\begin{compactitem}
+	\item id (BIGINT(10), NOT NULL, AUTO\_INCREMENT): egyedi azonosító
+    \item course (BIGINT(10), NOT NULL, DEFAULT 0): kurzus azonosítója
+    \item name (VARCHAR(255), NOT NULL): tevékenység neve
+    \item intro (LONGTEXT, NOT NULL): tevékenység leírása
+    \item introformat (INT(4), NOT NULL, DEFAULT 0): tevékenység leírásának típusa
+     \item duedate (BIGINT(10), NOT NULL, DEFAULT 0): beadás határideje
+    \item grade (BIGINT(10), NOT NULL, DEFAULT 0): tevékenység pontozása
+    \item timecreated (BIGINT(10), NOT NULL, DEFAULT 0): tevékenység létrehozás dátuma
+    \item timemodified (BIGINT(10), NOT NULL, DEFAULT 0): tevékenység módosításának dátuma
+ \end{compactitem}
+
+\subsubsection{\textbf{Mdl\_groupproject\_groups: Tevékenységen belüli csoportok adatai}}
+\begin{compactitem}
+	\item id (BIGINT(10), NOT NULL, AUTO\_INCREMENT): egyedi azonosító
+    \item groupprojectid (BIGINT(10), NOT NULL, DEFAULT 0): tevékenységmodul azonosítója
+    \item name (VARCHAR(255), NOT NULL): csoport neve
+    \item idnumber (VARCHAR(255),  NULL, DEFAULT NULL): csoport azonosítója
+    \item size (BIGINT(10), NOT NULL, DEFAULT 0): csoport mérete
+    \item timecreated (BIGINT(10), NOT NULL, DEFAULT 0): csoport létrehozás dátuma
+    \item timemodified (BIGINT(10), NOT NULL, DEFAULT 0): csoport módosításának dátuma
+ \end{compactitem} 
+
+\subsubsection{ \textbf{Mdl\_groupproject\_roles: Modul által kezel szerepkörök adatai}}
+\begin{compactitem}
+	\item id (BIGINT(10), NOT NULL, AUTO\_INCREMENT): egyedi azonosító
+    \item name (VARCHAR(255), NOT NULL): szerepkör neve
+    \item description (LONGTEXT, NOT  NULL): szerepkör leírása
+    \item timecreated (BIGINT(10), NOT NULL, DEFAULT 0): szerepkör létrehozásának dátuma
+    \item timemodified (BIGINT(10), NOT NULL, DEFAULT 0): szerepkör módosításának dátuma
+ \end{compactitem} 
+
+\subsubsection{  \textbf{Mdl\_groupproject\_user\_assign: Felhasználó csoporthozzárendelések adatai}}
+\begin{compactitem}
+	\item id (BIGINT(10), NOT NULL, AUTO\_INCREMENT): egyedi azonosító
+    \item groupid (BIGINT(10), NOT NULL): csoport azonosítója
+    \item userid (BIGINT(10), NOT NULL): felhasználó azonosítója
+    \item roleid (BIGINT(10),  NULL): szerepkör azonosítója
+ \end{compactitem} 
+
+\subsubsection{{\textbf{Mdl\_groupproject\_comments: Felhasználó csoportbejegyzések adatai}}}
+\begin{compactitem}
+	\item id (BIGINT(10), NOT NULL, AUTO\_INCREMENT): egyedi azonosító
+    \item groupid (BIGINT(10), NOT NULL): csoport azonosítója
+    \item userid (BIGINT(10), NOT NULL): felhasználó azonosítója
+    \item comment (LONGTEXT, NOT NULL): bejegyzés tartalma
+    \item timecreated (BIGINT(10), NOT NULL, DEFAULT 0): bejegyzés létrehozásának dátuma
+ \end{compactitem} 
+
+\subsubsection{ {\textbf{Mdl\_groupproject\_grades: Csoporteredmények adatai}}}
+\begin{compactitem}
+	\item id (BIGINT(10), NOT NULL, AUTO\_INCREMENT): egyedi azonosító
+    \item groupid (BIGINT(10), NOT NULL, DEFAULT 0): csoport azonosítója
+    \item grader (BIGINT(10), NOT NULL, DEFAULT 0): értékelő tanár azonosítója
+    \item grade (BIGINT(10), NOT NULL, DEFAULT 0): érdemjegy
+    \item timecreated (BIGINT(10), NOT NULL, DEFAULT 0): eredmény létrehozásának dátuma
+    \item timemodified (BIGINT(10), NOT NULL, DEFAULT 0): eredmény módosításának dátuma
+ \end{compactitem} 
+
+\subsubsection{  {\textbf{Mdl\_groupproject\_grades: Szerepkör jogosultság hozzárendelések}}}
+\begin{compactitem}
+	\item id (BIGINT(10), NOT NULL, AUTO\_INCREMENT): egyedi azonosító
+    \item roleid (BIGINT(10), NOT NULL, DEFAULT 0): szerepkör azonosítója
+    \item capabilityid (BIGINT(10), NOT NULL, DEFAULT 0): jogosultság azonosítója
+ \end{compactitem} 
+
+\subsection{Egyéb adattáblák} \label{adat:egyeb-1}
+
+\subsubsection{{\textbf{Mdl\_modules: Elérhető tevékenységmodulok adatai}}}
+ 
+A rendszerbe telepített elérhető tevékenység modulok tárolására szolgáló tábla. Telepítésnél egy rekord jön létre az egyedi modulunknak, a modul nevével és alapértelmezett láthatóságával. Az itt meghatározott azonosítóra fog hivatkozni a kurzuson belüli \textit{course\_modules} tábla.
+
+\subsubsection{{\textbf{Mdl\_course\_modules: Kurzuson belüli tevékenységmodulok adatai}}}
+ 
+Kurzuson belül új tevékenységmodul létrehozásánál két táblába kerülnek az új rekord adatai. A rendszerszinten kezelt \textit{course\_modules} tábla a kurzus számára releváns információkat tartalmazza. A \textit{module} és \textit{instance} oszlopok segítségével képes meghatározni a párhuzamosan létrejött instancia tábla nevét és az abba tárolt instancia rekordot, amit a segédprogramunk esetben már a \textit{groupproject} tábla tartalmaz.
+
+\subsubsection{{\textbf{Mdl\_grade\_items: Pontozási tételek táblája}}}
+ 
+Kurzus és tevékenység esetén pontozási tételeket hozhatunk létre a kurzus kontextusában. Ha a tételünk egy tevékenységre hivatkozik az \textit{itemtype}, \textit{itemmodule} és az \textit{iteminstance} oszlop segítségével funkcionálisan meghatározhatjuk a megfelelő instancia táblát és annak rekordját.
+
+\subsubsection{{\textbf{Mdl\_files: Portálszinten tárolt fájlok adatai}}}
+ 
+A fájlok kezelésére a Moodle egy úgynevezett File System API\footnote{\url{https://docs.moodle.org/dev/File_System_API}}-t használ. A Moodle File Storage API a fájl tartalmának checksum\footnote{Checksum: Ellenőrző összeg, adatátvitel vagy adattárolás hibátlanságának ellenőrzését segítő módszer.} (Moodle-ben \textit{ContentHash}-ként hivatkoznak rá) generálásával deduplikációt hajt végre. A tárolt fájlokat komponensekhez és fájlterületekhez rendelhetjük egy tételazonosító segítségével. Ezekre az adatokra rendre a \textit{component}, \textit{filearea} és \textit{itemid} oszlopok hivatkoznak, így ezen adatok mentén tudjuk a File API-n keresztül lekérni a szükséges fájlt. A segédprogramunk esetén a csoportok által leadott fájlok kapcsolódnak ehhez a táblához. A leadott fájlokat a \textit{mod\_groupproject} komponensen belül (ez részben adott), tároljuk, a \textit{groupproject\_submission} fájlterületen. Az itt tárolt fájlok tételazonosítói, a csoportok azonosítóira hivatkoznak, így minden csoportnak meg tudjuk határozni a beadott munkáját.
+
+\subsection{Engedélyek}
+
+A segédprogram által definiált engedélyek és azok alapértelmezett szerepköreinek táblázata.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{ | m{0.2\textwidth} | m{0.2\textwidth} | m{0.3\textwidth} | m{0.15\textwidth} | }
+		\hline
+		\textbf{Engedély azonosítója} & \textbf{Engedély neve} & \textbf{Alapértelmezett szerepkörök} & \textbf{Csoporttag számára elérhető?}  \\  
+		\hline \hline
+		\emph groupproject: view & Csoportfeladat tevékenység megtekintése & Minden felhasználó & Nem \\
+		\hline
+		\emph groupproject: addinstance &  Csoportfeladat tevékenység létrehozása & Tanár, Igazgató & Nem \\
+		\hline
+		\emph groupproject: post\_comment & Csoportmeg-jegyzés írása & Nem szerkesztő tanár, Tanár, Igazgató & Nem \\
+		\hline
+        \emph groupproject: managegroup & Csoport kezelése & Nem szerkesztő tanár, Tanár, Igazgató & Igen \\
+		\hline  
+        \emph groupproject: creategroup & Csoport létrehozása & Nem szerkesztő tanár, Tanár, Igazgató & Igen \\
+		\hline  
+        \emph groupproject: modifygroup & Csoport módosítása & Nem szerkesztő tanár, Tanár, Igazgató & Igen \\
+		\hline  
+        \emph groupproject: deletegroup & Csoport törlése & Nem szerkesztő tanár, Tanár, Igazgató & Nem \\
+		\hline  
+        \emph groupproject: adduser & Csoporthoz felhasználók hozzáadása & Nem szerkesztő tanár, Tanár, Igazgató & Igen \\
+		\hline  
+        \emph groupproject: gradegroup & Csoport értékelése & Nem szerkesztő tanár, Tanár, Igazgató & Nem \\
+		\hline  
+        \emph groupproject: submitfile & Csoport feladat leadása & Nem szerkesztő tanár, Tanár, Igazgató & Igen \\
+		\hline  
+	\end{tabular}
+	\caption{Egyedi engedélyek táblázata}
+	\label{tab:example-1}
+\end{table}
+A fent említett engedélyek telepítésnél a \textit{capibilities} táblába kerülnek, az \textit{access.php} fájl adatai alapján.
+
+\section{Architekturális terv}
+A Moodle-ben a modulok olyan önálló, önállóan telepíthető és futtatható kiegészítők, amelyek új funkciókat vagy szolgáltatásokat adnak a rendszerhez. A modulok számos különböző kategóriába sorolhatók, például:
+
+\begin{compactitem}
+    \item Tevékenység modul: ezek a modulok új funkciókat adnak a kurzusokhoz, például feladatokat, teszteket, wikiket vagy fórumokat.
+    \item Adminisztrációs modulok: ezek a modulok új funkciókat adnak az adminisztrátorok számára, például felhasználói fiókok kezelését, jelentések készítését vagy biztonsági beállításokat.
+    \item Rendszermodulok: ezek a modulok a Moodle alaprendszerének működését érintik, például a teljesítményt, a biztonságot vagy a nyelvi támogatást.
+\end{compactitem}
+
+\subsection{Fájl szerkezet}
+
+A rendszerben a modulok fájljai a Moodle telepítési helyén találhatók. A fájlszerkezet a következőképpen néz ki:
+
+/moodle/[modul\_típusa]/[modul\_név]/[modul\_fájlok]
+
+A Csoportfeladat fájljai a \textit{mod} mappában találhatók. A név egyedi azonosítóként szolgálnak, amelyek az elérési útvonalra utalnak, például jelen esetben a  \textit{mod\_groupproject}. A modulok fájljai általában a következő típusú fájlokat tartalmazzák:
+\begin{compactitem}
+    \item Sablonok: a sablonok a modulok felhasználói felületét határozzák meg.
+    \item Kiegészítők: a kiegészítők a modulok funkcionalitását bővítik.
+    \item Konfigurációs és rendszer által előírt fájlok: az adatbázis sémák a modulok adatbázisaiban tárolt adatok struktúráját határozzák meg, illetve a modul rendszerbe való integrálást segítik elő.
+    \item Egyéb fájlok: Minden egyéb osztálynak, template-nek és Javascript fájlnak, tesztesetnek megvan a rendszer által javasolt helye. Az egyéb modul működését elősegítő fájlokat így egy szabvány mentén tudjuk rendszerezni.
+\end{compactitem}
+A modulok fájlszerkezetének részletei a modul típusától függően változhatnak. Ezeknek az általános szabályoknak a figyelembevételével került implementálásra a program.
+
+\subsection{Az egyes fájlok, mappák leírásai:}
+\begin{compactitem}
+    \item \textbf{version.php}: Minden modul esetén szükséges egy version.php fájl, hiszen ez tartalmazza az aktuális verziószámot és ennek a módosítása teszi lehetővé a rendszer által is érzékelhető verziófrissítést. Emellett ez a fájl tartalmazza azt is, hogy milyen más modul szükséges a telepítéshez. 
+    \item \textbf{lib.php}: Általános függvények kerülnek ide, melyeket általában a keretrendszer hív meg. Ilyenek például a modul által támogatott funkciók listája, a modul saját navigációs sávja, a fájlküldést segítő műveletek, illetve tevékenységmodul esetén az instancia tábla karbantartása a kurzusmodul által generált adatok segítségével. 
+    \item \textbf{locallib.php}: A segédprogram saját függvénykönyvtára, mely nem szükséges a Moodle-el való kommunikációhoz. A Csoportfeladat esetében itt kerültek kiszervezésre a megjelenítésért felelős scriptek törzsének kirajzolását támogató függvényei.
+    \item \textbf{externallib.php}: A webszolgáltatások végpontjainak függvénydefiníciói. Szükséges minden végpont bemenő és kimenő paramétereinek pontos definiálása, illetve a tényleges függvény megírása, ami lefut a végpont meghívásakor. Az alkalmazás a szinkron kommunikáció közben próbálja majd elérni ezeket a végpontokat és az innen kapott adatok alapján rajzolja ki dinamikusan az üzeneteket a hallgatóknak.
+    \item \textbf{settings.php}: A globális beállításokat tartalmazó fájl, illetve a beállításoknak a navigációs sávjának manipulálása.
+    \item \textbf{db mappa}:
+    \begin{compactitem}
+        \item \textbf{install.xml}: A telepítéskor létrehozandó adatbázis táblákat tartalmazza a fájl.
+        \item \textbf{access.php}: Azokat a jogosultságokat definiálja, amelyek a modul használatához szükségesek.
+        \item \textbf{upgrade.php}: A modul verzióemelésénél lefutó PHP script, új adatok és adattáblák manipulálására használható. Az alkalmazásnál szükséges volt utólag módosítani néhány oszlop nevét és működését, így ezek visszavezetésre kerültek az install.xml-be is.
+        \item \textbf{log.php}: Az alkalmazás használata közben keletkezett logokat tudjuk itt definiálni egy tömbbe.
+        \item \textbf{services.php}: A webszolgáltatásokat tartalmazó PHP script. A hallgatók csoportos beszélgetése közben szükséges, hogy a modul frontend része tudjon adatokat küldeni és kérni a szervertől.
+    \end{compactitem}
+    \item \textbf{lang mappa}: A modul nyelvi fájljait tartalmazó mappa. Angol fordítás kötelező, ezeket a nyelvi elemeket az en mappában tároljuk. Egyéb fordítás esetén (például magyar), új mappát kell létrehozni (hu), és ugyan azzal a fájl elnevezéssel létrehozni a kívánt nyelvi fordítással elkészített lang fájlt.
+    \item \textbf{amd mappa}: A JavaScript forrás fájlok az src mappában találhatóak. Ezeket a Moodle a Grunt\footnote{Grunt: JavaScript feladatfuttató, \url{https://gruntjs.com/}} segítségével készíti elő a build mappába a megfelelő kódanalízis (ESLint\footnote{ESLint: Statikus Javascript kódelemző, \url{https://eslint.org/}} segítségével) és optimalizáció után. A segédprogramunk esetén a beszélgetés paneljében található üzenetek kezelése lett ide kiszervezve, JQuery\footnote{JQuery: Javascript keretrendszer , \url{https://jquery.com/}} segítségével.
+    \item \textbf{templates mappa}: A segédprogram által használt sablonok mappája. A Moodle által hivatalon támogatott websablon rendszer a Mustache template\footnote{Mustache template: Logika nélküli websablonrendszer,  \url{https://mustache.github.io/}}. A Csoportfeladat esetén a beszélgetési panel kezdeti állapota Mustache template segítségével készült.
+    \item \textbf{pix mappa}: A modul ikonját tartalmazó mappa.
+    \item \textbf{backup mappa}: A modul biztonsági mentését és annak visszatöltését kezelő osztályokat tartalmazó mappa. Mivel a Csoportfeladat Moodle 4.2-ben lett fejlesztve, így már csak a \textit{moodle2} által definiált biztonsági mentési protokollokat támogatja.
+    \item \textbf{classes mappa}: Az osztálydefiníciókat tartalmazza.
+    \begin{compactitem}
+        \item \textbf{event mappa}: A használat során keletkezett események osztályai találhatóak meg itt.
+        \item \textbf{output mappa}: A különböző felületi elemek reprezentálására szolgáló osztályok mappája.
+        \item \textbf{local mappa}: A segédprogram nem rendszer által használt osztályainak tárolására szolgáló mappa.
+    \end{compactitem}
+    \item \textbf{tests mappa}: A PHPUnit\footnote{PHPUnit: PHP egységtesztelő keretrendszer, \url{https://phpunit.de/}} és Behat\footnote{Behat: PHP eseményvezérelt tesztkeretrendszer, \url{https://docs.behat.org/}} teszteket tartalmazó mappa.
+    \item \textbf{egyéb PHP fájlok a gyökérkönyvtárban}: Minden egyéb PHP fájl a modulon belül egy elérhető oldalnak felel meg. (például \textit{group.php} = Csoportok kezelése oldal). Ezek a PHP scriptek az oldal paramétereit és header/footer kirajzolását segítik elő az adott kontextus segítségével. Az oldal tartalmát (lényegében a body-t) a script a \textit{locallib}-be defininált függvények segítségével rajzolja ki.
+\end{compactitem}
+
+
+\subsection{Osztályok}
+
+A segédprogramon belül van lehetőségünk egyedi osztályokat létrehozni. Ezek lehetnek teljesen egyedi, általunk definiált osztályokból leszármaztatott osztályok , de van lehetőségünk meglévő, a rendszer által definiált osztályokból is származtatni azokat. Az osztályainkat, általában a \textit{classes} mappába definiáljuk, így a fejlesztés során én is ezt a konvenciót követtem. Az UML-ek StarUML\footnote{\url{https://staruml.io/}} segítségével készültek el.
+
+\subsubsection{Felületi megjelenésért felelő osztályok}
+
+Az \textit{output} mappán belül található osztálydefiníciók, mind a felületi megjelenésért felelő objektumok tárolására szolgálnak. Az itt megírt osztálydefiníciók meglévő Moodle osztályokból kerültek származtatásra, és táblázatok és űrlapok megjelenését segítik. Ezek az osztályok felületi elemek validálását és megjelenítését segítik elő. 
+\begin{figure}[H]
+	\centering{
+		\includegraphics[width=0.9\linewidth]{images/table_sql.png}}
+	\caption{Táblázat osztálydefiníciók}
+\end{figure}
+
+\begin{figure}[H]
+	\centering{
+		\includegraphics[width=0.9\linewidth]{images/moodleform.png}}
+	\caption{Űrlap osztálydefiníciók}
+\end{figure}
+\subsubsection{Rendszerintegrációért felelős osztályok}
+
+A megfelelő rendszerintegráció érdekében a segédprogramunk különböző pontjain van lehetőségünk fix Moodle osztályokból származtatni saját megoldásainkat. Ezek az osztályok valamilyen Moodle által támogatott funkció absztrakt megfelelői, melyeket minden rendszerbe integrált segédprogramnak van lehetősége megvalósítani. A leszármaztatás után a segédprogram támogatni fogja az érintett funkciót.
+
+A \textit{mod\_groupproject} az alábbi ilyen megoldásokat tartalmazza:
+\begin{compactitem}
+    \item \textbf{Backup}: Biztonsági mentésért felelős interfész. Biztonsági mentés végrehajtásának lépéseit és a mentett XML\footnote{XML: Extensible Markup Language, általános célú leírónyelv} tartalmának visszatöltésének lépéseit tartalmazzák az ezért felelős osztályok a segédprogramban. 
+    \item \textbf{Event}: Moodle események kiváltásáért felelős osztályok halmaza. Jelen esetben a tevékenységmodul megtekintésénél váltjuk ki, így tudunk különböző teljesítési beállításokat használni a modulban.
+    \item \textbf{Dates}: A tevékenység fontosabb dátumainak reprezentálásáért felelős osztály. A beadási határidőt itt tudjuk a tevékenységmodulon kívüli felületen jelezni a hallgatók számára. 
+    \item \textbf{External\_Api}: Moodle webszolgáltatások támogatására fenntartott osztály. A Moodle REST\footnote{REST: Representational State Transfer, reprezentációs állapotátvitel} és SOAP\footnote{SOAP: Simple Object Access Protocol, távoli eljáráshívás-protokoll } protokollt támogat, ám ezek számára az üzenetek struktúráját és tartalmát egy absztrakt API osztály kezeli. A segédprogramunk esetében, mi a beszélgetés funkció AJAX\footnote{AJAX: Asynchronous JavaScript and XML, interaktív webalkalmazások létrehozására szolgáló webfejlesztési technika} hívásainál használjuk az osztály adta lehetőségeket.
+    \item \textbf{Modform}: A tevékenységmodulunk létrehozásáért felelős osztály. Az itt található űrlapmodell azért felelős, hogy tudjuk manipulálni, a tevékenység létrehozásánál kötelezően megjelenítendő mezőket. Ilyen extra mezők például a pontozási beállítások, vagy a beadási határidő kitöltése.
+\end{compactitem}
+
+\begin{figure}[H]
+	\centering{
+		\includegraphics[width=0.9\linewidth]{images/system_uml.png}}
+	\caption{Rendszerintegrációért felelős osztálydefiníciók}
+\end{figure}
+
+\subsubsection{Tevékenységmodul osztályok}
+
+A modul helyes működése érdekében saját osztályai is vannak a segédprogramnak, melyek pusztán az adatbáziskommunikáció elősegítését, illetve az adatok izolációját segítik elő a mindennapi működésben. 
+
+\begin{compactitem}
+    \item \textbf{Entitások}: Az adatbázis kommunikáció elősegítése érdekében bevezetésre került egy \textit{entity} ősosztály, melynek minden leszármazottja, egy a segédprogram által létrehozott adattáblára hivatkozik. Az ebből leszármazott osztályok a CRUD\footnote{CRUD: Create, Read, Update, and Delete, perzinsztens tárolásra szolgáló operációk} folyamatokon kívül számos a modul működését elősegítő metódussal rendelkeznek.
+
+\begin{figure}[H]
+	\centering{
+		\includegraphics[width=0.9\linewidth]{images/entity.png}}
+	\caption{Entitás osztályok}
+\end{figure}
+    
+    \item \textbf{Factory osztály}: Az entitások létrehozását segítő Factory osztály. Képes \textit{stdClass}-ok segítségével meghívni a különböző osztályok konstruktorait, így az adatbázisból kiolvasott rekordokat könnyen tudja egy sokkal komplexebb objektummá konvertálni.
+    \item \textbf{Loader osztály}: Sok esetben a különböző PHP scriptek egymásnak csak egyszerű változókat tudnak átadni az URL-eken keresztül, így egy azonosító alapján kell egy teljes objektumot létrehozni. Ezek betöltésére szolgál a \textit{loader} osztály, melyik képes egy azonosító alapján bármely entitást betölteni.
+    \item \textbf{Generátor osztályok}: A Mustache template és JQuery által használt nézetek, egy előre megadott struktúrájú adathalmazra támaszkodnak. Ezek előállításában segít a \textit{generator} osztály, mely a nézetek számára releváns adatokat rendszerezi.
+\end{compactitem}
+
+\section{Tesztelési terv}
+
+A Moodle támogatja az egység-, illetve az eseményvezérelt tesztelést. A modul teszteseteit a test mappába lehet megírni. Támogatottak a PHPUnit által használt konvenciók, illetve a Behat Gherkin\footnote{Gherkin: Viselkedésellenőrző nyelv \url{https://cucumber.io/docs/gherkin/}} nyelven írt tesztesetei. Az egységtesztek kipróbálásához szükséges elvégezni a szükséges környezeti beállításokat. A beállítás lépéseit rendszerünk alábbi linkjén érhetjük el: \url{/admin/tool/phpunit/index.php}  Az egységtesztelés saját táblákkal dolgozik, így ezeknek egy egyedi prefix-et kell adnunk, hogy el tudja különíteni a rendszer a tesztelés céljából fenntartott táblákat, illetve a rendszer által használt táblákat.
+
+\subsection{PHPUnit tesztesetek}
+
+Az egységtesztek célja, hogy a modul által kezelt osztályok metódusait validálja és azok működésének sajátosságait minél jobban lefedje. A fejlesztés során számos kisebb forráskódbeli módosításnál sikerült hibákat kiszűrni a Unit tesztek segítségével. Ahol indokolt volt, tesztvezérelt fejlesztési metódusok kerültek alkalmazásra a fejlesztés közben, így számos osztály viselkedésének megírása tesztesetekkel lett alátámasztva.
+
+Az alábbi programkomponensek egységtesztelése került implementálásra:
+
+\begin{compactitem}
+\item \textbf{Tevékenységmodul tesztesetei:}
+\begin{compactitem}
+    \item Tevékenységmodul entitás létrehozása, módosítása és törlése
+    \item Tevékenységmodul csoportjainak betöltése
+    \item Felhasználó csoporttagság ellenőrzése tevékenységmodul kontextusában.
+\end{compactitem}
+\item \textbf{Csoportok tesztesetei:}
+\begin{compactitem}
+    \item Csoport létrehozása, módosítása
+    \item Csoport törlése és az ezzel kapcsolatos csoportadatok törlése
+    \item Csoport tagjainak lekérése
+    \item Csoport adott felhasználójának szerepének lekérdezése
+    \item Csoport tagjainak azonosítójának lekérdezése
+\end{compactitem}
+\item \textbf{Felhasználói hozzárendelések tesztesetei:}
+\begin{compactitem}
+        \item Felhasználói hozzárendelés létrehozása, módosítása és törlése
+\end{compactitem}
+\item \textbf{Szerepkörök tesztesetei:}
+\begin{compactitem}
+        \item Szerepkör létrehozása és módosítása
+        \item Szerepkör törlése és a szerepkörhozzárendelések törlésének ellenőrzése
+        \item Szerepkör jogosultságok létrehozása (Jogosultság teszteseteivel részben összefügg)
+        \item Szerepkör jogosultság ellenőrzése
+\end{compactitem}
+\item \textbf{Jogosultság tesztesetei:}
+\begin{compactitem}
+        \item Jogosultság létrehozása, módosítása és törlése
+        \item Szerepkör jogosultságainak lekérdezése
+        \item Felhasználó rendelkezik-e az adott jogosultsággal egy adott tevékenységmodulon belül?
+\end{compactitem}
+\item \textbf{Üzenet tesztesetei:}
+\begin{compactitem}
+        \item Üzenet létrehozása, módosítása és törlése
+\end{compactitem}
+\item \textbf{Eredmény tesztesetei:}
+\begin{compactitem}
+        \item Eredmény létrehozása, módosítása és törlése
+        \item Eredmény értékének konvertálása felhasználó számára
+\end{compactitem}
+\item \textbf{Factory osztály tesztesetei}:
+\begin{compactitem}
+        \item Tevékenységmodul létrehozása \textit{stdClass} alapján
+        \item Csoport létrehozása \textit{stdClass} alapján
+        \item Felhasználói hozzárendelés létrehozása \textit{stdClass} alapján
+        \item Szerepkör létrehozása \textit{stdClass} alapján
+        \item Jogosultság létrehozása \textit{stdClass} alapján
+        \item Üzenet létrehozása \textit{stdClass} alapján
+        \item Eredmény létrehozása \textit{stdClass} alapján
+\end{compactitem}
+\item \textbf{Loader osztály tesztesetei}:
+\begin{compactitem}
+        \item Tevékenységmodul létrehozása azonosító segítségével
+        \item Csoport létrehozása azonosító segítségével
+        \item Felhasználói hozzárendelés létrehozása azonosító segítségével
+        \item Szerepkör létrehozása azonosító segítségével
+        \item Jogosultság létrehozása azonosító segítségével
+        \item Üzenet létrehozása azonosító segítségével
+        \item Eredmény létrehozása azonosító segítségével
+\end{compactitem}
+\end{compactitem}
+
+\subsection{Behat tesztesetek}
+
+Az eseményvezérelt tesztek segítségével valós programhasználatot tudunk modellezni. A keretrendszer által használt Gherkin nyelv könnyen olvasható és a struktúrája is egyszerű, lényegében feltételek mentén utasításokat fogalmazunk meg a gép számára. A Moodle-ben kialakított Behat keretrendszer is a segédprogramok támogatására szolgál. Az alaprendszer már számos általános utasítás definícióját és tesztesetét tartalmazza, így alkalmazásunknak elég a saját komponenseire fókuszálnia.
+
+Az alábbi programkomponensek eseményvezérelt tesztelése került implementálásra:
+
+\begin{compactitem}
+    \item \textbf{Csoport létrehozása és módosítása űrlap:}
+    \begin{compactitem}
+        \item Üres űrlap esetén hibát jelez a rendszer
+        \item Helytelen csoportlétszám esetén hibát dob a rendszer
+        \item Név és csoportlétszám megadás, illetve az űrlap leadása után a rendszer elnavigál minket egy másik oldalra
+    \end{compactitem}
+    \item \textbf{Szerepkör létrehozása és módosítása űrlap:}
+    \begin{compactitem}
+        \item Üres űrlap esetén hibát dob a rendszer
+        \item Név megadása, illetve az űrlap leadása után a rendszer elnavigál minket egy másik oldalra
+    \end{compactitem}
+    \item \textbf{Csoportok listázása oldal megtekintése :}
+    \begin{compactitem}
+        \item Ha nincs csoport nem jelenik meg a táblázat
+        \item Ha a tevékenységmodulon belül létezik csoport megjelenik a táblázat
+        \item Ha a csoport létrehozása gombra kattintunk a rendszer elnavigál minket egy másik oldalra
+        \item Ha a Szerepkörök kezelése linkre kattintunk a rendszer elnavigál minket egy másik oldalra
+        \item A csoportok táblázat \textit{Műveletek} oszlopban található ikonok közül mindegyik kattintható 
+    \end{compactitem}
+    \item \textbf{Szerepkörök listázása oldal megtekintése :}
+    \begin{compactitem}
+        \item Ha nincs szerepkör nem jelenik meg a táblázat
+        \item Ha létezik szerepkör megjelenik a táblázat
+        \item Ha a szerepkör létrehozása gombra kattintunk a rendszer elnavigál minket egy másik oldalra
+        \item A szerepkörök táblázat \textit{Műveletek} oszlopban található ikonok közül mindegyik kattintható 
+    \end{compactitem}
+\end{compactitem}
+
+\section{Továbbfejlesztési lehetőségek}
+
+\begin{compactitem}
+ \item Különböző feladatbeadási lehetőségek biztosítása (például esszé szöveges formátumban vagy egyszerre több fájlleadás). Ezeket a lehetőségeket bővítmény (subplugin) szinten is meg lehet valósítani.
+\item Dinamikus mezők támogatása csoportok és szerepkörök esetén, így extra információkat tudunk felvenni vagy kérni a csoporttagoktól.
+\item  Moodle szinten kezelt csoporttokkal (cohort) és szerepkörökkel (role) való integráció.
+\item Naptárbejegyzések készítse a rendszeren belül, ha adtunk meg beadási határidőt.
+	\item Automatikus értesítők a hallgatók számára a beadási határidő lejárta előtt. Az értesítő tárgyának és szövegének módosítása különböző kontextusokban. 
+\item Fájl előnézet funkció bizonyos állománytípusok esetén (például PDF vagy PNG állománytípusok megjelenítése).
+\item Bővebb tesztesetek.
+\item Moodle 4.3 és PHP8.3 támogatása
+\item Bővebb naplózási esetek. Felhasználó komment írásnál, fájlfeltöltésnél, és osztályozásnál esemény kiváltása.
+\item Tanárok számára visszajelzés funkció a leadott munkára. Visszajelzés integrálása modulba és kurzus szintű pontozás felületen is.
+\item Többnyelvű lokalizáció. Jelen formájában a segédprogram a magyar és az angol nyelvet támogatja csak.
+\item A modul elérhetővé tétele a Moodle hivatalos egyéni fejlesztésű segédprogram gyűjteményében.\footnote{\url{https://moodle.org/plugins/index.php/?q=}}
+ \end{compactitem}

@@ -104,8 +104,7 @@ class entity_factory {
      * @param \stdClass $record
      * @return capability
      */
-    public static function crate_capability_from_stdclass(\stdClass $record): capability
-    {
+    public static function crate_capability_from_stdclass(\stdClass $record): capability {
         return new capability($record->id, $record->roleid, $record->capiblityid);
     }
 
@@ -114,8 +113,7 @@ class entity_factory {
      * @param \stdClass $record
      * @return grade
      */
-    public static function create_grade_from_stdclass(\stdClass $record): grade
-    {
+    public static function create_grade_from_stdclass(\stdClass $record): grade {
         return new grade($record->id, $record->groupid, $record->grader, $record->grade, $record->timemodified, $record->timecreated);
     }
 }

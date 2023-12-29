@@ -11,6 +11,8 @@ namespace mod_groupproject\output;
 
 use mod_groupproject\local\entities\capability;
 
+require_once($CFG->libdir . "/tablelib.php");
+
 class role_table extends \table_sql {
     public function __construct($uniqueid, $url) {
         global $CFG;
@@ -30,8 +32,11 @@ class role_table extends \table_sql {
             'name' => get_string('rolename', 'mod_groupproject'),
             'description' => get_string('roledescription', 'mod_groupproject'),
             'capabilities' => get_string('capabilities', 'mod_groupproject'),
-            'actions' => get_string('actions', 'mod_groupproject'),
         );
+
+        /*if(is_siteadmin()){
+            $cols['actions'] = get_string('actions', 'mod_groupproject');
+        }*/
 
         $this->define_columns(array_keys($cols));
         $this->define_headers(array_values($cols));

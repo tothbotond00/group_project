@@ -8,14 +8,22 @@ defined('MOODLE_INTERNAL') || die();
  * @package    mod_groupproject
  * @category   test
  * @copyright  2023 Tóth Botond
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_groupproject_generator extends testing_module_generator {
     public function create_instance($record = null, array $options = null) {
+            $record = (object)(array)$record;
 
-    }
+            $defaultsettings = array(
+                'grade'                             => 100,
+                'duedate'                           => 0,
+            );
 
-    public function create_group(array $data) {
+            foreach ($defaultsettings as $name => $value) {
+                if (!isset($record->{$name})) {
+                    $record->{$name} = $value;
+                }
+            }
 
+            return parent::create_instance($record, (array)$options);
     }
 }
