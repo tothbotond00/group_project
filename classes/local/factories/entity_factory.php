@@ -78,8 +78,8 @@ class entity_factory {
     public static function create_user_assign_from_stdclass(\stdClass $record) : user_assign {
         return new user_assign(
             $record->id,
-            $record->groupid,
             $record->userid,
+            $record->groupid,
             $record->roleid
         );
     }
@@ -105,7 +105,7 @@ class entity_factory {
      * @return capability
      */
     public static function crate_capability_from_stdclass(\stdClass $record): capability {
-        return new capability($record->id, $record->roleid, $record->capiblityid);
+        return new capability($record->id, $record->roleid, $record->capabilityid);
     }
 
     /**

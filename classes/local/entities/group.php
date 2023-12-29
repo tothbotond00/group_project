@@ -178,10 +178,12 @@ class group extends entity {
 
         //Submission deletion
         $groupproject = entity_loader::groupproject_loader($this->groupprojectid);
-        $context = $groupproject->get_context();
-        $fs = new \file_storage();
-        list($in, $inparams) = $DB->get_in_or_equal([$this->id], SQL_PARAMS_NAMED);
-        $fs->delete_area_files_select($context->id, 'mod_groupproject','groupproject_submission',$in, $inparams);
+        if(!empty($groupproject)){
+            $context = $groupproject->get_context();
+            $fs = new \file_storage();
+            list($in, $inparams) = $DB->get_in_or_equal([$this->id], SQL_PARAMS_NAMED);
+            $fs->delete_area_files_select($context->id, 'mod_groupproject','groupproject_submission',$in, $inparams);
+        }
 
         parent::delete();
     }
